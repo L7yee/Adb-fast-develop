@@ -41,4 +41,4 @@ app.on('browser-window-created', (_event, win) => {
   });
 });
 app.on('will-quit', () => fs.rmSync(temp, { recursive: true, force: true }));
-require('../electron/main');
+require('../main');

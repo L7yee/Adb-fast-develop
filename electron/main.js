@@ -27,7 +27,7 @@ function createWindow() {
     minWidth: 940,
     minHeight: 640,
     title: 'ADB Dashboard',
-    icon: path.join(__dirname, '..', 'resources', 'icon.png'),
+    icon: path.join(__dirname, 'resources', 'icon.png'),
     backgroundColor: '#f5f5f7',
     show: false,
     webPreferences: {
@@ -66,7 +66,7 @@ async function refreshDevice() {
 }
 
 app.whenReady().then(() => {
-  store = new CommandStore(app.getPath('userData'), path.join(__dirname, '..', 'config', 'commands.yaml'));
+  store = new CommandStore(app.getPath('userData'), path.join(__dirname, 'config', 'commands.yaml'));
   createWindow();
   refreshDevice();
   const poll = setInterval(refreshDevice, 5000);

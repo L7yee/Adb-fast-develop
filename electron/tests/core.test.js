@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { CommandStore, normalizeCommand } = require('../electron/config');
-const { parseDevices, shellArgs } = require('../electron/adb');
+const { CommandStore, normalizeCommand } = require('../config');
+const { parseDevices, shellArgs } = require('../adb');
 
 test('imports valid commands from the existing YAML and persists edits', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'adb-dashboard-'));

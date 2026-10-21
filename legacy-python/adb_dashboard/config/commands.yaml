@@ -1,0 +1,203 @@
+# ADB Debug Dashboard - Command Configuration
+# ============================================
+#
+# This file defines all ADB shell commands available in the dashboard.
+# You can add, modify, or remove commands by editing this file.
+# The application will automatically load changes on next startup.
+#
+# HOW TO ADD A NEW COMMAND:
+# -------------------------
+# 1. Copy an existing command block below
+# 2. Modify the properties as needed:
+#    - id: Unique identifier (use underscores, no spaces)
+#    - label: Display name shown on the command card
+#    - shell_command: The ADB shell command to execute (without 'adb shell' prefix)
+#    - category: One of "read", "streaming", or "action"
+#    - auto_refresh_capable: true/false - whether periodic polling applies
+# 3. Save the file and restart the application
+#
+# CATEGORY TYPES EXPLAINED:
+# -------------------------
+# - read: Standard command that reads and returns output immediately
+#         Examples: cat /proc/meminfo, cat /sys/...
+#
+# - streaming: Continuous real-time output that keeps running until stopped
+#              Examples: getevent -l, logcat
+#              Note: Auto-refresh does not apply to streaming commands
+#
+# - action: Launches an activity on the device (no output expected)
+#           Examples: am start commands for engineer modes
+#
+# AUTO-REFRESH CAPABLE COMMANDS:
+# ------------------------------
+# Set auto_refresh_capable: true for commands that benefit from periodic polling.
+# This allows users to enable auto-refresh with configurable intervals (1s, 5s, 10s, 30s).
+#
+# Suitable for:
+# - Commands that show changing values (e.g., memory usage, brightness)
+# - Status monitoring commands
+# - Values that change frequently during debugging
+#
+# NOT suitable for:
+# - Streaming commands (they already provide real-time output)
+# - Action commands (they launch activities, not monitor values)
+#
+# EXAMPLES:
+# ---------
+# Simple read command:
+#   - id: my_command
+#     label: My Command
+#     shell_command: cat /path/to/file
+#     category: read
+#     auto_refresh_capable: false
+#
+# Auto-refresh capable command:
+#   - id: cpu_usage
+#     label: CPU Usage
+#     shell_command: cat /proc/stat
+#     category: read
+#     auto_refresh_capable: true
+#
+# Streaming command:
+#   - id: kernel_log
+#     label: Kernel Log
+#     shell_command: dmesg -w
+#     category: streaming
+#     auto_refresh_capable: false
+#
+# Action command:
+#   - id: settings_app
+#     label: Open Settings
+#     shell_command: am start -a android.settings.SETTINGS
+#     category: action
+#     auto_refresh_capable: false
+#
+# TROUBLESHOOTING:
+# ----------------
+# - If the application shows default commands, check this file for YAML syntax errors
+# - Use proper indentation (2 spaces per level)
+# - Ensure all required properties are present for each command
+# - The id must be unique across all commands
+#
+# Version: 1.0
+
+commands:
+- id: mtk_engineer_mode
+  label: MTK Engineer Mode
+  shell_command: am start com.mediatek.engineermode/com.mediatek.engineermode.EngineerMode
+  category: streaming
+  auto_refresh_capable: false
+  requires_root: false
+- id: mtk_debuglogger
+  label: MTK DebugLogger
+  shell_command: am start com.debug.loggerui/com.debug.loggerui.MainActivity
+  is_clickable: true
+  category: action
+  auto_refresh_capable: false
+  requires_root: false
+- id: unisoc_engineer_mode
+  label: Unisoc Engineer Mode
+  shell_command: am start -n com.sprd.engineermode/.EngineerModeActivity
+  category: action
+  auto_refresh_capable: false
+- id: unisoc_factory
+  label: Unisoc Factory
+  shell_command: am start -n com.sprd.validationtools/com.sprd.validationtools.ValidationToolsMainActivity
+  is_clickable: true
+  category: action
+  auto_refresh_capable: true
+  requires_root: true
+- id: get_events
+  label: Getevent
+  shell_command: getevent -l
+  category: streaming
+  auto_refresh_capable: false
+  requires_root: false
+- id: serial_port_info
+  label: "\u4E32\u53E3\u4FE1\u606F"
+  shell_command: cat /proc/tty/driver/serial
+  category: read
+  auto_refresh_capable: false
+  requires_root: false
+- id: memory_info_1
+  label: "\u5185\u5B58\u4FE1\u606F"
+  shell_command: cat /proc/meminfo
+  is_clickable: true
+  category: read
+  auto_refresh_capable: true
+  requires_root: false
+- id: interrupt_info
+  label: "\u4E2D\u65AD\u4FE1\u606F"
+  shell_command: cat /proc/interrupts
+  category: read
+  auto_refresh_capable: true
+  requires_root: false
+- id: gpio_status
+  label: "GPIO\u72B6\u6001"
+  shell_command: cat /sys/kernel/debug/gpio
+  category: action
+  auto_refresh_capable: true
+  requires_root: true
+- id: brightness_1
+  label: Brightness
+  shell_command: cat /sys/class/leds/lcd-backlight/brightness
+  is_clickable: true
+  category: read
+  auto_refresh_capable: true
+  requires_root: true
+- id: audio_pcm
+  label: Audio pcm
+  shell_command: cat /proc/asound/pcm
+  is_clickable: true
+  category: read
+  auto_refresh_capable: false
+  requires_root: false
+- id: tinymix
+  label: tinymix
+  shell_command: tinymix
+  is_clickable: true
+  category: read
+  auto_refresh_capable: false
+  requires_root: false
+- id: ''
+  label: "\u4E32\u53E3\u65E5\u5FD7"
+  shell_command: dmesg -w
+  is_clickable: true
+  category: streaming
+  auto_refresh_capable: false
+  requires_root: false
+- id: dmesg
+  label: kernel-log
+  shell_command: dmesg -w
+  is_clickable: true
+  category: streaming
+  auto_refresh_capable: false
+  requires_root: true
+- id: audio_register
+  label: Audio Register Info
+  shell_command: cat /sys/kernel/debug/mtksocaudio
+  category: read
+  auto_refresh_capable: false
+  requires_root: true
+- id: pkill_audioserver
+  label: pkill audioserver
+  shell_command: pkill audioserver
+  is_clickable: true
+  category: action
+  auto_refresh_capable: false
+  requires_root: true
+- id: touch
+  label: touch
+  shell_command: settings put system show_touches 1 && settings put system pointer_location
+    1
+  is_clickable: true
+  category: read
+  auto_refresh_capable: false
+  requires_root: true
+- id: tp
+  label: "\u83B7\u53D6tp\u7248\u672C"
+  shell_command: echo v >proc/android_touch/debug && cat proc/android_touch/debug
+  is_clickable: true
+  category: action
+  auto_refresh_capable: false
+  requires_root: true

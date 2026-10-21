@@ -1,4 +1,5 @@
-node_modules/
-dist/
+electron/node_modules/
+electron/dist/
 *.log
-legacy-python/
+**/__pycache__/
+*.pyc

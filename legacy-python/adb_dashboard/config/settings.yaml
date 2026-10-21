@@ -1,0 +1,9 @@
+window:
+  width: 1024
+  height: 700
+  x: 100
+  y: 100
+  maximized: true
+file:
+  last_save_directory: ''
+version: 1
