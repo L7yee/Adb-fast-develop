@@ -1,0 +1,27 @@
+{
+  "name": "adb-dashboard",
+  "version": "2.0.0",
+  "private": true,
+  "description": "ADB debugging dashboard built with Electron",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.js",
+    "icon": "electron scripts/generate-icon.js",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "dev.l7yee.adbdashboard",
+    "productName": "ADB Dashboard",
+    "electronDist": "node_modules/electron/dist",
+    "files": ["electron/**/*", "config/commands.yaml", "resources/icon.png", "package.json"],
+    "win": { "target": ["nsis", "portable"], "icon": "resources/icon.ico" }
+  }
+}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <title>ADB Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="manager.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">⌘</span><div><strong>ADB Dashboard</strong><small>Android 调试工作台</small></div></div>
+      <div class="sidebar-label">工作区</div>
+      <nav id="category-nav" aria-label="命令分类">
+        <button class="nav-item active" data-category="all"><span class="nav-icon">▦</span>全部命令 <span id="count-all" class="nav-count">0</span></button>
+        <button class="nav-item" data-category="read"><span class="nav-icon">◫</span>读取信息 <span id="count-read" class="nav-count">0</span></button>
+        <button class="nav-item" data-category="streaming"><span class="nav-icon">◉</span>实时监控 <span id="count-streaming" class="nav-count">0</span></button>
+        <button class="nav-item" data-category="action"><span class="nav-icon">↗</span>快捷操作 <span id="count-action" class="nav-count">0</span></button>
+      </nav>
+      <div class="sidebar-label tools-label">工具</div>
+      <button class="nav-item" id="install-apk"><span class="nav-icon">↓</span>安装 APK</button>
+      <button class="nav-item" id="open-converter"><span class="nav-icon">⌁</span>Init Cmd 转换</button>
+      <div class="sidebar-bottom"><div class="device-mini"><span id="device-dot" class="status-dot"></span><div><strong id="device-title">正在检测设备</strong><small id="device-subtitle">请稍候…</small></div></div><button id="refresh-device" class="icon-button" title="刷新设备状态" aria-label="刷新设备状态">↻</button></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar"><div class="breadcrumbs">工作区 <span>/</span> <strong id="breadcrumb-current">全部命令</strong></div><div class="top-actions"><span class="shortcut-hint">⌘ / Ctrl + R 刷新</span><button id="manage-command" class="button secondary">管理命令</button><button id="add-command" class="button primary"><span>＋</span> 新建命令</button></div></header>
+      <div class="workspace">
+        <section class="command-section">
+          <div class="hero"><div><div class="eyebrow">ADB CONTROL CENTER</div><h1 id="page-title">全部命令</h1><p>连接设备，选择命令，即刻查看调试结果。</p></div><div class="hero-graphic" aria-hidden="true"><span class="hero-ring ring-a"></span><span class="hero-ring ring-b"></span><span class="hero-core">⌘</span></div></div>
+          <div class="overview"><div class="overview-item"><span class="overview-icon blue">▣</span><div><small>设备状态</small><strong id="overview-device">检测中</strong></div></div><div class="overview-item"><span class="overview-icon green">◆</span><div><small>Root 权限</small><strong id="overview-root">检测中</strong></div></div><div class="overview-item"><span class="overview-icon purple">⌘</span><div><small>可用命令</small><strong id="overview-count">0 个</strong></div></div></div>
+          <div class="section-heading"><div><h2>命令库 <span id="visible-count" class="heading-count">0</span></h2><p id="category-description">你常用的 ADB 操作都在这里</p></div><div class="section-tools"><label class="search-box"><span>⌕</span><input id="search" placeholder="搜索命令或内容" aria-label="搜索命令"></label><button id="reorder" class="button subtle" title="拖动卡片调整顺序">调整顺序</button></div></div>
+          <div id="command-grid" class="command-grid"></div>
+          <div id="empty-state" class="empty-state" hidden><div>⌕</div><strong>没有找到命令</strong><p>换个关键词，或新建一条命令。</p></div>
+        </section>
+        <section class="output-section"><div class="output-header"><div><span class="eyebrow">LIVE OUTPUT</span><h2>执行结果</h2></div><span id="output-state" class="output-pill">就绪</span></div><div class="output-command"><div><small>当前命令</small><strong id="output-label">等待执行</strong></div><code id="output-shell">选择左侧命令开始</code></div><div id="compare-note" class="compare-note" hidden></div><pre id="output-text" class="output-text"><span class="placeholder-output">› 连接设备后，点击命令查看输出。
+
+  支持实时日志、自动刷新和结果对比。</span></pre><div class="output-footer"><button id="stop" class="button subtle" disabled>停止</button><div><button id="clear" class="icon-button" title="清空输出" aria-label="清空输出">⌫</button><button id="copy" class="icon-button" title="复制输出" aria-label="复制输出">⧉</button><button id="save" class="icon-button" title="保存输出" aria-label="保存输出">↓</button></div></div><div class="compare-control"><label class="switch-row"><span><strong>对比模式</strong><small>高亮显示同一命令的变化</small></span><input type="checkbox" id="compare-toggle"><span class="switch"></span></label></div></section>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="manager-dialog" class="modal"><div class="modal-header"><div><span class="eyebrow">COMMAND LIBRARY</span><h2>管理命令</h2></div><button type="button" class="close-button" data-close="manager-dialog" aria-label="关闭">×</button></div><div id="manager-list" class="manager-list"></div><div class="modal-footer"><span class="spacer"></span><button id="manager-add" class="button primary">＋ 新建命令</button></div></dialog>
+  <dialog id="command-dialog" class="modal"><form id="command-form"><div class="modal-header"><div><span class="eyebrow">COMMAND EDITOR</span><h2 id="command-dialog-title">新建命令</h2></div><button type="button" class="close-button" data-close="command-dialog" aria-label="关闭">×</button></div><div class="modal-body"><label>显示名称<input name="label" required maxlength="80" placeholder="例如：内存信息"></label><label>命令 ID<input name="id" required pattern="[a-zA-Z0-9_-]+" placeholder="例如：memory_info"></label><label>ADB Shell 命令<textarea name="shell_command" required rows="3" placeholder="cat /proc/meminfo"></textarea></label><div class="form-row"><label>命令类型<select name="category"><option value="read">读取信息</option><option value="streaming">实时监控</option><option value="action">快捷操作</option></select></label><label class="check-label"><input name="auto_refresh_capable" type="checkbox"> 支持自动刷新</label></div><label class="check-label"><input name="requires_root" type="checkbox"> 需要 Root 权限</label><p id="form-error" class="form-error" hidden></p></div><div class="modal-footer"><button id="delete-command" type="button" class="button danger" hidden>删除命令</button><span class="spacer"></span><button type="button" class="button secondary" data-close="command-dialog">取消</button><button type="submit" class="button primary">保存命令</button></div></form></dialog>
+
+  <dialog id="converter-dialog" class="modal"><div class="modal-header"><div><span class="eyebrow">INIT CMD TOOL</span><h2>Init Cmd 转换</h2></div><button type="button" class="close-button" data-close="converter-dialog" aria-label="关闭">×</button></div><div class="modal-body"><div class="form-row"><label>短命令前缀<input id="short-prefix" value="15" maxlength="2"></label><label>长命令前缀<input id="long-prefix" value="39" maxlength="2"></label></div><label>输入十六进制字节（每行一条）<textarea id="converter-input" rows="5" placeholder="01 02\n01 02 03"></textarea></label><label>转换结果<textarea id="converter-output" rows="5" readonly></textarea></label><p id="converter-error" class="form-error" hidden></p></div><div class="modal-footer"><button id="copy-converted" class="button secondary">复制结果</button><span class="spacer"></span><button id="convert-cstyle" class="button secondary">C 数组格式</button><button id="convert-plain" class="button primary">普通格式</button></div></dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
