@@ -3,8 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { EventEmitter } = require('node:events');
 const { CommandStore, normalizeCommand } = require('../config');
-const { parseDevices, shellArgs } = require('../adb');
+const { AdbRunner, parseDevices, shellArgs } = require('../adb');
 
 test('imports valid commands from the existing YAML and persists edits', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'adb-dashboard-'));
@@ -49,4 +50,41 @@ test('parses ADB states and keeps shell commands out of the host shell', () => {
   const command = normalizeCommand({ id: 'one', label: 'One', shell_command: 'echo a && echo b', category: 'read' });
   assert.deepEqual(shellArgs('ABC', command), ['-s', 'ABC', 'shell', 'echo a && echo b']);
   assert.match(shellArgs('ABC', { ...command, requires_root: true })[3], /^su 0 sh -c /);
+});
+
+test('retries a deprecated SDK install once with the bypass flag and keeps -g', async () => {
+  const apkPath = 'C:\\apps\\old target.apk';
+  const calls = [];
+  const events = [];
+  const responses = [
+    { code: 1, stderr: 'Failure [INSTALL_FAILED_DEPRECATED_SDK_VERSION: found 20]' },
+    { code: 0, stdout: 'Success' }
+  ];
+  const terminal = new Promise((resolve) => {
+    const runner = new AdbRunner((event) => {
+      events.push(event);
+      if (event.type === 'complete' || event.type === 'error') resolve(event);
+    }, (file, args) => {
+      calls.push({ file, args });
+      const child = new EventEmitter();
+      child.stdout = new EventEmitter();
+      child.stderr = new EventEmitter();
+      child.kill = () => {};
+      const response = responses.shift();
+      setImmediate(() => {
+        if (response.stdout) child.stdout.emit('data', Buffer.from(response.stdout));
+        if (response.stderr) child.stderr.emit('data', Buffer.from(response.stderr));
+        child.emit('close', response.code);
+      });
+      return child;
+    });
+    runner.install(apkPath, 'DEVICE');
+  });
+  const result = await terminal;
+  assert.equal(result.type, 'complete');
+  assert.match(result.output, /兼容参数重试.*Success/s);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0].args, ['-s', 'DEVICE', 'install', '-r', '-g', apkPath]);
+  assert.deepEqual(calls[1].args, ['-s', 'DEVICE', 'install', '--bypass-low-target-sdk-block', '-r', '-g', apkPath]);
+  assert.ok(events.some((event) => event.type === 'chunk' && event.text.includes('兼容参数重试')));
 });

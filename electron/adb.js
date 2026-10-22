@@ -58,8 +58,9 @@ function shellArgs(serial, command) {
 }
 
 class AdbRunner {
-  constructor(send) {
+  constructor(send, spawnAdb = spawn) {
     this.send = send;
+    this.spawnAdb = spawnAdb;
     this.child = null;
     this.sequence = 0;
   }
@@ -77,7 +78,7 @@ class AdbRunner {
     this.stop();
     const sequence = this.sequence;
     const args = shellArgs(serial, command);
-    const child = spawn('adb', args, { windowsHide: true, shell: false });
+    const child = this.spawnAdb('adb', args, { windowsHide: true, shell: false });
     this.child = child;
     this.send({ type: 'start', id: command.id, label: command.label, shell: command.shell_command });
     let stdout = '';
@@ -112,30 +113,40 @@ class AdbRunner {
   async install(apkPath, serial) {
     this.stop();
     const sequence = this.sequence;
-    const child = spawn('adb', ['-s', serial, 'install', '-r', '-g', apkPath], { windowsHide: true, shell: false });
-    this.child = child;
-    let failed = false;
     this.send({ type: 'start', id: '__install__', label: '安装 APK', shell: apkPath });
-    let output = '';
-    for (const stream of [child.stdout, child.stderr]) {
-      stream.on('data', (data) => {
-        if (sequence !== this.sequence) return;
-        const text = data.toString();
-        output += text;
-        this.send({ type: 'chunk', text });
+    const attempt = (bypass = false) => {
+      const args = ['-s', serial, 'install', ...(bypass ? ['--bypass-low-target-sdk-block'] : []), '-r', '-g', apkPath];
+      const child = this.spawnAdb('adb', args, { windowsHide: true, shell: false });
+      this.child = child;
+      let failed = false;
+      let output = '';
+      for (const stream of [child.stdout, child.stderr]) {
+        stream.on('data', (data) => {
+          if (sequence !== this.sequence) return;
+          const text = data.toString();
+          output += text;
+          this.send({ type: 'chunk', text });
+        });
+      }
+      child.on('error', (error) => {
+        failed = true;
+        if (sequence === this.sequence) this.send({ type: 'error', message: error.message });
       });
-    }
-    child.on('error', (error) => {
-      failed = true;
-      if (sequence === this.sequence) this.send({ type: 'error', message: error.message });
-    });
-    child.on('close', (code) => {
-      if (sequence !== this.sequence) return;
-      this.child = null;
-      if (failed) return;
-      if (code === 0) this.send({ type: 'complete', output: output.trim(), id: '__install__' });
-      else this.send({ type: 'error', message: output.trim() || `安装失败，退出码 ${code}` });
-    });
+      child.on('close', (code) => {
+        if (sequence !== this.sequence) return;
+        this.child = null;
+        if (failed) return;
+        if (code !== 0 && !bypass && output.includes('INSTALL_FAILED_DEPRECATED_SDK_VERSION')) {
+          this.send({ type: 'chunk', text: '\n检测到目标 SDK 版本过低，正在使用兼容参数重试...\n' });
+          if (sequence === this.sequence) attempt(true);
+        } else if (code === 0) {
+          this.send({ type: 'complete', output: bypass ? `已使用兼容参数重试。\n${output.trim()}` : output.trim(), id: '__install__' });
+        } else {
+          this.send({ type: 'error', message: output.trim() || `安装失败，退出码 ${code}` });
+        }
+      });
+    };
+    attempt();
   }
 }
 
