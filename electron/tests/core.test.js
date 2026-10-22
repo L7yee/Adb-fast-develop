@@ -6,6 +6,7 @@ const path = require('node:path');
 const { EventEmitter } = require('node:events');
 const { CommandStore, normalizeCommand } = require('../config');
 const { AdbRunner, parseDevices, shellArgs } = require('../adb');
+const { calculateMipiClock } = require('../renderer/mipi-clock');
 
 test('imports valid commands from the existing YAML and persists edits', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'adb-dashboard-'));
@@ -87,4 +88,21 @@ test('retries a deprecated SDK install once with the bypass flag and keeps -g', 
   assert.deepEqual(calls[0].args, ['-s', 'DEVICE', 'install', '-r', '-g', apkPath]);
   assert.deepEqual(calls[1].args, ['-s', 'DEVICE', 'install', '--bypass-low-target-sdk-block', '-r', '-g', apkPath]);
   assert.ok(events.some((event) => event.type === 'chunk' && event.text.includes('兼容参数重试')));
+});
+
+test('matches the MIPI CLK workbook sample and divider rounding', () => {
+  const sample = {
+    width: 1080, height: 2400, fps: 60, lanes: 4, sourceMHz: 192,
+    hfp: 72, hbp: 72, hsync: 72, vfp: 8, vbp: 48, vsync: 4
+  };
+  assert.deepEqual(calculateMipiClock(sample), {
+    horizontalTotal: 1296, verticalTotal: 2460, neededDpiHz: 191289600,
+    divider: 1, actualFps: 192000000 / 1296 / 2460,
+    actualFpsInteger: 60, mipiClockHz: 1280000000, mipiClockMHzInteger: 1280
+  });
+  const simple = { width: 1000, height: 1000, fps: 1, lanes: 1, sourceMHz: 1.4,
+    hfp: 0, hbp: 0, hsync: 0, vfp: 0, vbp: 0, vsync: 0 };
+  assert.equal(calculateMipiClock(simple).divider, 1);
+  assert.equal(calculateMipiClock({ ...simple, sourceMHz: 1.5 }).divider, 2);
+  assert.throws(() => calculateMipiClock({ ...simple, sourceMHz: 0.4 }), /时钟源过低/);
 });

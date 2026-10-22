@@ -267,6 +267,26 @@ function convert(format) {
   $('converter-output').value = converted.join('\n');
 }
 
+function updateMipiClock(event) {
+  event.preventDefault();
+  const error = $('clock-error');
+  error.hidden = true;
+  try {
+    const result = calculateMipiClock(Object.fromEntries(new FormData(event.currentTarget)));
+    const format = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 4 });
+    $('clock-mipi').textContent = format.format(result.mipiClockMHzInteger);
+    $('clock-needed').textContent = format.format(result.neededDpiHz / 1000000);
+    $('clock-divider').textContent = format.format(result.divider);
+    $('clock-fps').textContent = format.format(result.actualFpsInteger);
+    $('clock-fps-detail').textContent = `未取整 ${format.format(result.actualFps)} FPS`;
+  } catch (problem) {
+    for (const id of ['clock-mipi', 'clock-needed', 'clock-divider', 'clock-fps']) $(id).textContent = '—';
+    $('clock-fps-detail').textContent = '按原表取整';
+    error.textContent = problem.message;
+    error.hidden = false;
+  }
+}
+
 async function refreshCommands() { commands = await api.listCommands(); renderCards(); }
 
 document.querySelectorAll('#workspace-nav .nav-item').forEach((button) => button.addEventListener('click', () => {
@@ -307,6 +327,13 @@ $('open-converter').addEventListener('click', () => $('converter-dialog').showMo
 $('convert-plain').addEventListener('click', () => convert('plain'));
 $('convert-cstyle').addEventListener('click', () => convert('cstyle'));
 $('copy-converted').addEventListener('click', async () => { await navigator.clipboard.writeText($('converter-output').value); toast('已复制转换结果'); });
+$('open-mipi-clock').addEventListener('click', () => { $('mipi-clock-dialog').showModal(); $('mipi-clock-form').requestSubmit(); });
+$('mipi-clock-form').addEventListener('submit', updateMipiClock);
+$('mipi-clock-form').addEventListener('input', () => {
+  for (const id of ['clock-mipi', 'clock-needed', 'clock-divider', 'clock-fps']) $(id).textContent = '—';
+  $('clock-fps-detail').textContent = '等待重新计算';
+  $('clock-error').hidden = true;
+});
 $('stop').addEventListener('click', async () => { await api.stop(); running = false; setOutputState('已停止'); renderCards(); });
 $('clear').addEventListener('click', async () => { await api.stop(); running = false; setOutput(''); $('saved-path').hidden = true; setOutputState('就绪'); });
 $('copy').addEventListener('click', async () => { await navigator.clipboard.writeText(output); toast('已复制输出'); });

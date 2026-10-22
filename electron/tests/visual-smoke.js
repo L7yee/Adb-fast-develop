@@ -43,6 +43,20 @@ app.on('browser-window-created', (_event, win) => {
         return { added, managed, converted };
       })()`);
       if (interactions.added !== info.cards + 1 || interactions.managed !== info.cards + 1 || interactions.converted !== '15 00 00 02 01 02') throw new Error(`UI interaction failed: ${JSON.stringify(interactions)}`);
+      const clock = await win.webContents.executeJavaScript(`(() => {
+        document.getElementById('open-mipi-clock').click();
+        return { open: document.getElementById('mipi-clock-dialog').open,
+          values: ['clock-needed', 'clock-divider', 'clock-fps', 'clock-mipi'].map(id => document.getElementById(id).textContent) };
+      })()`);
+      if (!clock.open || JSON.stringify(clock.values) !== JSON.stringify(['191.2896', '1', '60', '1,280'])) throw new Error(`MIPI clock UI failed: ${JSON.stringify(clock)}`);
+      const changedClock = await win.webContents.executeJavaScript(`(() => {
+        const form = document.getElementById('mipi-clock-form');
+        form.elements.sourceMHz.value = '300';
+        form.requestSubmit();
+        return ['clock-divider', 'clock-fps', 'clock-mipi'].map(id => document.getElementById(id).textContent);
+      })()`);
+      if (JSON.stringify(changedClock) !== JSON.stringify(['2', '47', '1,000'])) throw new Error(`MIPI clock recalculation failed: ${JSON.stringify(changedClock)}`);
+      await win.webContents.executeJavaScript(`document.getElementById('mipi-clock-dialog').close()`);
       const paths = { kernel: path.join(temp, 'kernel.txt'), logcat: path.join(temp, 'logcat.txt') };
       const logs = await win.webContents.executeJavaScript(`(async () => {
         document.querySelector('[data-workspace="logs"]').click();
@@ -85,7 +99,7 @@ app.on('browser-window-created', (_event, win) => {
           captured[kind] = fs.statSync(paths[kind]).size;
         }
       }
-      console.log(JSON.stringify({ ...info, interactions, logs, captured }));
+      console.log(JSON.stringify({ ...info, interactions, clock, logs, captured }));
       app.quit();
     } catch (error) {
       console.error(error);

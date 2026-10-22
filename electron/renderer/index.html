@@ -20,6 +20,7 @@
       <div class="sidebar-label tools-label">工具</div>
       <button class="nav-item" id="install-apk"><span class="nav-icon">↓</span>安装 APK</button>
       <button class="nav-item" id="open-converter"><span class="nav-icon">⌁</span>Init Cmd 转换</button>
+      <button class="nav-item" id="open-mipi-clock"><span class="nav-icon">◷</span>MIPI CLK 计算</button>
       <div class="sidebar-bottom"><div class="device-mini"><span id="device-dot" class="status-dot"></span><div><strong id="device-title">正在检测设备</strong><small id="device-subtitle">请稍候…</small></div></div><button id="refresh-device" class="icon-button" title="刷新设备状态" aria-label="刷新设备状态">↻</button></div>
     </aside>
 
@@ -50,7 +51,17 @@
 
   <dialog id="converter-dialog" class="modal"><div class="modal-header"><div><span class="eyebrow">INIT CMD TOOL</span><h2>Init Cmd 转换</h2></div><button type="button" class="close-button" data-close="converter-dialog" aria-label="关闭">×</button></div><div class="modal-body"><div class="form-row"><label>短命令前缀<input id="short-prefix" value="15" maxlength="2"></label><label>长命令前缀<input id="long-prefix" value="39" maxlength="2"></label></div><label>输入十六进制字节（每行一条）<textarea id="converter-input" rows="5" placeholder="01 02\n01 02 03"></textarea></label><label>转换结果<textarea id="converter-output" rows="5" readonly></textarea></label><p id="converter-error" class="form-error" hidden></p></div><div class="modal-footer"><button id="copy-converted" class="button secondary">复制结果</button><span class="spacer"></span><button id="convert-cstyle" class="button secondary">C 数组格式</button><button id="convert-plain" class="button primary">普通格式</button></div></dialog>
 
+  <dialog id="mipi-clock-dialog" class="modal clock-modal"><form id="mipi-clock-form"><div class="modal-header"><div><span class="eyebrow">DISPLAY TIMING</span><h2>MIPI CLK 计算</h2></div><button type="button" class="close-button" data-close="mipi-clock-dialog" aria-label="关闭">×</button></div><div class="modal-body clock-body">
+    <div class="clock-group"><h3>显示参数</h3><div class="clock-fields"><label>宽度<input name="width" type="number" min="1" step="1" value="1080" required></label><label>高度<input name="height" type="number" min="1" step="1" value="2400" required></label><label>目标 FPS<input name="fps" type="number" min="0" step="any" value="60" required></label></div></div>
+    <div class="clock-group"><h3>水平时序</h3><div class="clock-fields"><label>HFP<input name="hfp" type="number" min="0" step="1" value="72" required></label><label>HBP<input name="hbp" type="number" min="0" step="1" value="72" required></label><label>HSYNC<input name="hsync" type="number" min="0" step="1" value="72" required></label></div></div>
+    <div class="clock-group"><h3>垂直时序</h3><div class="clock-fields"><label>VFP<input name="vfp" type="number" min="0" step="1" value="8" required></label><label>VBP<input name="vbp" type="number" min="0" step="1" value="48" required></label><label>VSYNC<input name="vsync" type="number" min="0" step="1" value="4" required></label></div></div>
+    <div class="clock-group"><h3>时钟与通道</h3><div class="clock-fields"><label>DPI 时钟源 (MHz)<input name="sourceMHz" type="number" min="0" step="any" value="192" required></label><label>Lane 数<input name="lanes" type="number" min="1" step="1" value="4" required></label></div></div>
+    <div id="clock-results" class="clock-results" aria-live="polite"><div class="clock-result primary-result"><small>所需 MIPI CLK</small><strong id="clock-mipi">—</strong><span>MHz · 按原表取整</span></div><div class="clock-result"><small>所需 DPI 时钟</small><strong id="clock-needed">—</strong><span>MHz</span></div><div class="clock-result"><small>分频值</small><strong id="clock-divider">—</strong><span>整数</span></div><div class="clock-result"><small>实际 FPS</small><strong id="clock-fps">—</strong><span id="clock-fps-detail">按原表取整</span></div></div>
+    <p id="clock-error" class="form-error" hidden></p><p class="clock-note">MIPI CLK 按 24 bit 像素、90% 链路效率计算；结果与原表相同，向下取整。</p>
+  </div><div class="modal-footer"><span class="spacer"></span><button type="submit" class="button primary">计算 CLK</button></div></form></dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="mipi-clock.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
