@@ -1,4 +1,5 @@
 const { spawn } = require('node:child_process');
+const fs = require('node:fs');
 
 function collect(args, timeout = 10000) {
   return new Promise((resolve, reject) => {
@@ -72,41 +73,39 @@ class AdbRunner {
     this.send({ type: 'stopped' });
   }
 
-  async run(command, serial) {
+  async run(command, serial, savePath = null) {
     this.stop();
     const sequence = this.sequence;
     const args = shellArgs(serial, command);
     const child = spawn('adb', args, { windowsHide: true, shell: false });
     this.child = child;
-    this.send({ type: 'start', id: command.id, label: command.label, shell: command.shell_command, streaming: command.category === 'streaming' });
+    this.send({ type: 'start', id: command.id, label: command.label, shell: command.shell_command });
     let stdout = '';
     let stderr = '';
     let failed = false;
-    const streaming = command.category === 'streaming';
-    const timer = streaming ? null : setTimeout(() => child.kill(), 30000);
+    const timer = setTimeout(() => child.kill(), savePath ? 120000 : 30000);
     child.stdout.on('data', (data) => {
       if (sequence !== this.sequence) return;
-      const text = data.toString();
-      if (streaming) this.send({ type: 'chunk', text });
-      else stdout += text;
+      stdout += data.toString();
     });
     child.stderr.on('data', (data) => {
       if (sequence !== this.sequence) return;
-      const text = data.toString();
-      if (streaming) this.send({ type: 'chunk', text });
-      else stderr += text;
+      stderr += data.toString();
     });
     child.on('error', (error) => {
       failed = true;
       if (sequence === this.sequence) this.send({ type: 'error', message: error.code === 'ENOENT' ? '未找到 ADB，请检查 PATH' : error.message });
     });
     child.on('close', (code) => {
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer);
       if (sequence !== this.sequence) return;
       this.child = null;
       if (failed) return;
-      if (code === 0) this.send({ type: 'complete', output: stdout.trim(), label: command.label, id: command.id, shell: command.shell_command, streaming });
-      else this.send({ type: 'error', message: child.killed ? '命令执行超时或已停止' : (stderr.trim() || stdout.trim() || `命令退出码 ${code}`) });
+      if (code !== 0) { this.send({ type: 'error', message: child.killed ? '命令执行超时或已停止' : (stderr.trim() || stdout.trim() || `命令退出码 ${code}`) }); return; }
+      try {
+        if (savePath) fs.writeFileSync(savePath, stdout, 'utf8');
+        this.send({ type: 'complete', output: stdout.trim(), label: command.label, id: command.id, shell: command.shell_command, savedPath: savePath });
+      } catch (error) { this.send({ type: 'error', message: `日志保存失败：${error.message}` }); }
     });
   }
 
@@ -116,7 +115,7 @@ class AdbRunner {
     const child = spawn('adb', ['-s', serial, 'install', '-r', apkPath], { windowsHide: true, shell: false });
     this.child = child;
     let failed = false;
-    this.send({ type: 'start', id: '__install__', label: '安装 APK', shell: apkPath, streaming: true });
+    this.send({ type: 'start', id: '__install__', label: '安装 APK', shell: apkPath });
     let output = '';
     for (const stream of [child.stdout, child.stderr]) {
       stream.on('data', (data) => {
@@ -134,7 +133,7 @@ class AdbRunner {
       if (sequence !== this.sequence) return;
       this.child = null;
       if (failed) return;
-      if (code === 0) this.send({ type: 'complete', output: output.trim(), id: '__install__', streaming: true });
+      if (code === 0) this.send({ type: 'complete', output: output.trim(), id: '__install__' });
       else this.send({ type: 'error', message: output.trim() || `安装失败，退出码 ${code}` });
     });
   }

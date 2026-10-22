@@ -14,4 +14,4 @@ The current application is in `electron/`. The Python/PyQt implementation is pre
 - `electron/config/commands.yaml`: bundled default commands; do not write to it at runtime.
 - `electron/tests/`: Node core tests and a manual Electron UI smoke check.
 
-Preserve the existing command types (`read`, `streaming`, `action`) and user workflows when changing behavior. Keep changes focused and verify them with a relevant test or a running app check.
+Commands run once per click (`read` or `action`). Keep kernel and Logcat snapshots in the Logs workspace, with separate persisted save paths. Preserve the remaining user workflows and verify changes with a relevant test or a running app check.

@@ -9,8 +9,30 @@ let store;
 let runner;
 let device = { state: 'disconnected' };
 let checking = null;
+const LOG_COMMANDS = {
+  kernel: { id: '__kernel_log__', label: '内核日志', shell_command: 'dmesg' },
+  logcat: { id: '__logcat_log__', label: 'Logcat 日志', shell_command: 'logcat -d' }
+};
 
 function settingsPath() { return path.join(app.getPath('userData'), 'window.json'); }
+function logPathsFile() { return path.join(app.getPath('userData'), 'log-paths.json'); }
+
+function logPaths() {
+  const defaults = {
+    kernel: path.join(app.getPath('documents'), 'kernel-log.txt'),
+    logcat: path.join(app.getPath('documents'), 'logcat-log.txt')
+  };
+  try { return { ...defaults, ...JSON.parse(fs.readFileSync(logPathsFile(), 'utf8')) }; }
+  catch { return defaults; }
+}
+
+function setLogPath(kind, filePath) {
+  if (!LOG_COMMANDS[kind]) throw new Error('日志类型无效');
+  if (typeof filePath !== 'string' || !path.isAbsolute(filePath.trim())) throw new Error('请输入完整的保存路径');
+  const next = { ...logPaths(), [kind]: filePath.trim() };
+  fs.writeFileSync(logPathsFile(), JSON.stringify(next), 'utf8');
+  return next[kind];
+}
 
 function savedBounds() {
   try { return JSON.parse(fs.readFileSync(settingsPath(), 'utf8')); }
@@ -88,6 +110,21 @@ ipcMain.handle('adb:run', async (_event, id) => {
   if (current.state !== 'connected') throw new Error(current.message || '设备未连接');
   if (command.requires_root && !current.root) throw new Error('该命令需要 root 权限');
   runner.run(command, current.serial);
+  return true;
+});
+ipcMain.handle('logs:paths', () => logPaths());
+ipcMain.handle('logs:path:set', (_event, kind, filePath) => setLogPath(kind, filePath));
+ipcMain.handle('logs:path:choose', async (_event, kind) => {
+  if (!LOG_COMMANDS[kind]) throw new Error('日志类型无效');
+  const choice = await dialog.showSaveDialog(window, { title: `选择${LOG_COMMANDS[kind].label}保存位置`, defaultPath: logPaths()[kind], filters: [{ name: '文本文件', extensions: ['txt', 'log'] }] });
+  return choice.canceled ? null : setLogPath(kind, choice.filePath);
+});
+ipcMain.handle('logs:capture', async (_event, kind, filePath) => {
+  if (!LOG_COMMANDS[kind]) throw new Error('日志类型无效');
+  const destination = setLogPath(kind, filePath);
+  const current = await refreshDevice();
+  if (current.state !== 'connected') throw new Error(current.message || '设备未连接');
+  runner.run({ ...LOG_COMMANDS[kind], requires_root: kind === 'kernel' && current.root }, current.serial, destination);
   return true;
 });
 ipcMain.handle('adb:stop', () => { runner.stop(); return true; });

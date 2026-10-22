@@ -2,19 +2,23 @@ const fs = require('node:fs');
 const path = require('node:path');
 const YAML = require('yaml');
 
-const CATEGORIES = new Set(['read', 'streaming', 'action']);
+const CATEGORIES = new Set(['read', 'action']);
 
 function normalizeCommand(value) {
   if (!value || typeof value !== 'object') throw new Error('命令数据无效');
   const id = String(value.id || '').trim();
   const label = String(value.label || '').trim();
-  const shell_command = String(value.shell_command || '').trim();
+  let shell_command = String(value.shell_command || '').trim();
   if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error('命令 ID 只能包含字母、数字、下划线和连字符');
   if (!label || !shell_command) throw new Error('名称和 ADB 命令不能为空');
-  const category = CATEGORIES.has(value.category) ? value.category : 'read';
+  if (value.category === 'streaming') {
+    if (/^dmesg\s+-w$/i.test(shell_command)) shell_command = 'dmesg';
+    else if (/^getevent\s+-l$/i.test(shell_command)) shell_command = 'getevent -lp';
+    else if (/^logcat(?:\s+.*)?$/i.test(shell_command) && !/\s-d\b/.test(shell_command)) shell_command = shell_command.replace(/^logcat\b/i, 'logcat -d');
+  }
+  const category = value.category === 'streaming' && id === 'mtk_engineer_mode' ? 'action' : (CATEGORIES.has(value.category) ? value.category : 'read');
   return {
     id, label, shell_command, category,
-    auto_refresh_capable: category === 'read' && Boolean(value.auto_refresh_capable),
     requires_root: Boolean(value.requires_root)
   };
 }
@@ -31,6 +35,7 @@ class CommandStore {
     const seen = new Set();
     return (Array.isArray(data.commands) ? data.commands : []).flatMap((raw) => {
       try {
+        if (raw?.id === 'dmesg' && raw?.category === 'streaming' && /^dmesg\s+-w$/i.test(raw.shell_command)) return [];
         const command = normalizeCommand(raw);
         if (seen.has(command.id)) return [];
         seen.add(command.id);

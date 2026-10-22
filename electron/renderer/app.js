@@ -1,16 +1,13 @@
 const $ = (id) => document.getElementById(id);
 const api = window.dashboard;
-const categoryNames = { all: '全部命令', read: '读取信息', streaming: '实时监控', action: '快捷操作' };
-const categoryDescriptions = { all: '你常用的 ADB 操作都在这里', read: '快速读取设备状态与系统信息', streaming: '持续观察设备事件和日志', action: '一键执行常用设备操作' };
+const categoryNames = { read: '读取信息', action: '快捷操作' };
 let commands = [];
 let device = { state: 'disconnected' };
-let category = 'all';
+let workspace = 'commands';
 let editingId = null;
 let reorder = false;
 let activeId = null;
 let running = false;
-let auto = null;
-let autoTimer = null;
 let output = '';
 let previous = new Map();
 let toastTimer;
@@ -31,7 +28,7 @@ function setOutput(text, append = false) {
 function setOutputState(label, kind = '') {
   $('output-state').textContent = label;
   $('output-state').className = `output-pill ${kind}`;
-  $('stop').disabled = !running && !auto;
+  $('stop').disabled = !running;
 }
 
 function renderDevice() {
@@ -48,7 +45,7 @@ function renderDevice() {
 
 function renderCards() {
   const query = $('search').value.trim().toLowerCase();
-  const visible = commands.filter((item) => (category === 'all' || item.category === category) && (!query || `${item.label} ${item.shell_command}`.toLowerCase().includes(query)));
+  const visible = commands.filter((item) => !query || `${item.label} ${item.shell_command}`.toLowerCase().includes(query));
   const grid = $('command-grid');
   grid.replaceChildren();
   for (const item of visible) {
@@ -56,8 +53,8 @@ function renderCards() {
     card.className = `command-card ${activeId === item.id && running ? 'running' : ''}`;
     card.draggable = reorder;
     card.dataset.id = item.id;
-    const icon = { read: '◫', streaming: '◉', action: '↗' }[item.category];
-    card.innerHTML = `<div class="card-top"><span class="card-icon ${item.category}">${icon}</span><button class="card-menu" title="编辑命令" aria-label="编辑命令">···</button></div><div class="card-main"><h3></h3><code></code></div><div class="card-footer"><div class="card-tags"></div><div class="card-actions"></div></div>`;
+    const icon = { read: '◫', action: '↗' }[item.category];
+    card.innerHTML = `<div class="card-top"><span class="card-icon ${item.category}">${icon}</span><button class="card-menu" title="编辑指令" aria-label="编辑指令">···</button></div><div class="card-main"><h3></h3><code></code></div><div class="card-footer"><div class="card-tags"></div><div class="card-actions"></div></div>`;
     card.querySelector('h3').textContent = item.label;
     card.querySelector('code').textContent = item.shell_command;
     card.querySelector('.card-menu').addEventListener('click', () => openCommandDialog(item));
@@ -73,17 +70,6 @@ function renderCards() {
       tags.append(' ', root);
     }
     const actions = card.querySelector('.card-actions');
-    if (item.auto_refresh_capable) {
-      const select = document.createElement('select');
-      select.className = `refresh-select ${auto?.id === item.id ? 'active' : ''}`;
-      select.title = '自动刷新间隔';
-      for (const [value, label] of [['0', '自动'], ['1', '1秒'], ['5', '5秒'], ['10', '10秒'], ['30', '30秒']]) {
-        const option = document.createElement('option'); option.value = value; option.textContent = label; select.append(option);
-      }
-      select.value = auto?.id === item.id ? String(auto.seconds) : '0';
-      select.addEventListener('change', () => setAuto(item, Number(select.value)));
-      actions.append(select);
-    }
     const run = document.createElement('button');
     run.className = 'run-button';
     run.textContent = activeId === item.id && running ? '运行中…' : '运行 ↗';
@@ -102,7 +88,7 @@ function renderCards() {
       if (from < 0 || to < 0 || from === to) return;
       const ids = commands.map((command) => command.id);
       ids.splice(to, 0, ids.splice(from, 1)[0]);
-      try { commands = await api.reorderCommands(ids); renderCards(); toast('命令顺序已保存'); }
+      try { commands = await api.reorderCommands(ids); renderCards(); toast('指令顺序已保存'); }
       catch (error) { toast(error.message); }
     });
     grid.append(card);
@@ -110,40 +96,45 @@ function renderCards() {
   $('visible-count').textContent = visible.length;
   $('empty-state').hidden = visible.length !== 0;
   $('overview-count').textContent = `${commands.length} 个`;
-  for (const key of Object.keys(categoryNames)) $('count-' + key).textContent = key === 'all' ? commands.length : commands.filter((item) => item.category === key).length;
+  $('count-all').textContent = commands.length;
 }
 
-function stopAuto() {
-  if (autoTimer) clearInterval(autoTimer);
-  autoTimer = null;
-  auto = null;
-  renderCards();
-}
-
-function setAuto(item, seconds) {
-  stopAuto();
-  if (!seconds) return;
-  if (device.state !== 'connected') { toast('请先连接设备'); return; }
-  auto = { id: item.id, seconds };
-  runCommand(item, true);
-  autoTimer = setInterval(() => { if (!running && auto?.id === item.id) runCommand(item, true); }, seconds * 1000);
-  renderCards();
-}
-
-async function runCommand(item, fromAuto = false) {
-  if (!fromAuto) stopAuto();
+async function runCommand(item) {
   if (running) await api.stop();
   activeId = item.id;
   running = true;
   $('output-label').textContent = item.label;
   $('output-shell').textContent = `adb shell ${item.shell_command}`;
+  $('saved-path').hidden = true;
   $('compare-note').hidden = true;
-  setOutputState(item.category === 'streaming' ? '实时输出' : '执行中', 'running');
+  setOutput('');
+  setOutputState('执行中', 'running');
   renderCards();
   try { await api.runCommand(item.id); }
   catch (error) {
     running = false;
-    if (fromAuto) stopAuto();
+    setOutput(`错误：${error.message}`);
+    setOutputState('出错', 'error');
+    renderCards();
+  }
+}
+
+async function captureLog(kind) {
+  if (running) await api.stop();
+  const filePath = $(`${kind}-path`).value.trim();
+  const label = kind === 'kernel' ? '内核日志' : 'Logcat 日志';
+  activeId = `__${kind}_log__`;
+  running = true;
+  $('output-label').textContent = label;
+  $('output-shell').textContent = `adb shell ${kind === 'kernel' ? 'dmesg' : 'logcat -d'}`;
+  $('saved-path').hidden = true;
+  $('compare-note').hidden = true;
+  setOutput('');
+  setOutputState('抓取中', 'running');
+  renderCards();
+  try { await api.captureLog(kind, filePath); }
+  catch (error) {
+    running = false;
     setOutput(`错误：${error.message}`);
     setOutputState('出错', 'error');
     renderCards();
@@ -175,22 +166,22 @@ function showComparison(before, after) {
 }
 
 function onAdbEvent(event) {
-  if (event.type === 'stopped') { running = false; setOutputState(auto ? '自动刷新' : '已停止'); renderCards(); return; }
+  if (event.type === 'stopped') { running = false; setOutputState('已停止'); renderCards(); return; }
   if (event.type === 'start') {
     running = true;
     activeId = event.id;
     $('output-label').textContent = event.label;
     $('output-shell').textContent = event.id === '__install__' ? event.shell : `adb shell ${event.shell}`;
+    $('saved-path').hidden = true;
     $('compare-note').hidden = true;
-    if (event.streaming) setOutput(`[${new Date().toLocaleTimeString()}] ${event.label}\n${$('output-shell').textContent}\n${'─'.repeat(48)}\n`);
-    setOutputState(event.streaming ? '实时输出' : '执行中', 'running');
+    setOutput('');
+    setOutputState(event.id.endsWith('_log__') ? '抓取中' : '执行中', 'running');
     renderCards();
     return;
   }
   if (event.type === 'chunk') { setOutput(event.text, true); return; }
   if (event.type === 'error') {
     running = false;
-    if (auto) stopAuto();
     setOutput(`${output ? output + '\n' : ''}错误：${event.message}`);
     setOutputState('出错', 'error');
     renderCards();
@@ -198,13 +189,15 @@ function onAdbEvent(event) {
   }
   if (event.type === 'complete') {
     running = false;
-    if (!event.streaming) {
-      output = event.output || '命令已完成，没有返回内容。';
-      if ($('compare-toggle').checked && previous.has(event.id)) showComparison(previous.get(event.id), output);
-      else setOutput(output);
-      if ($('compare-toggle').checked) previous.set(event.id, output);
+    output = event.output || '操作已完成，没有返回内容。';
+    if (!event.savedPath && workspace === 'commands' && $('compare-toggle').checked && previous.has(event.id)) showComparison(previous.get(event.id), output);
+    else setOutput(output);
+    if (!event.savedPath && workspace === 'commands' && $('compare-toggle').checked) previous.set(event.id, output);
+    if (event.savedPath) {
+      $('saved-path').textContent = `已保存至 ${event.savedPath}`;
+      $('saved-path').hidden = false;
     }
-    setOutputState(auto ? '自动刷新' : '已完成');
+    setOutputState('已完成');
     renderCards();
   }
 }
@@ -215,9 +208,8 @@ function openCommandDialog(item = null) {
   const form = $('command-form');
   form.reset();
   for (const field of ['id', 'label', 'shell_command', 'category']) form.elements[field].value = item?.[field] || (field === 'category' ? 'read' : '');
-  form.elements.auto_refresh_capable.checked = Boolean(item?.auto_refresh_capable);
   form.elements.requires_root.checked = Boolean(item?.requires_root);
-  $('command-dialog-title').textContent = item ? '编辑命令' : '新建命令';
+  $('command-dialog-title').textContent = item ? '编辑指令' : '新建指令';
   $('delete-command').hidden = !item;
   $('form-error').hidden = true;
   $('command-dialog').showModal();
@@ -248,14 +240,13 @@ async function saveCommand(event) {
   const command = {
     id: form.elements.id.value.trim(), label: form.elements.label.value.trim(),
     shell_command: form.elements.shell_command.value.trim(), category: form.elements.category.value,
-    auto_refresh_capable: form.elements.auto_refresh_capable.checked,
     requires_root: form.elements.requires_root.checked
   };
   try {
     commands = await api.saveCommand(command, editingId);
     $('command-dialog').close();
     renderCards();
-    toast('命令已保存');
+    toast('指令已保存');
   } catch (error) { $('form-error').textContent = error.message; $('form-error').hidden = false; }
 }
 
@@ -278,13 +269,14 @@ function convert(format) {
 
 async function refreshCommands() { commands = await api.listCommands(); renderCards(); }
 
-document.querySelectorAll('#category-nav .nav-item').forEach((button) => button.addEventListener('click', () => {
-  category = button.dataset.category;
-  document.querySelectorAll('#category-nav .nav-item').forEach((item) => item.classList.toggle('active', item === button));
-  $('page-title').textContent = categoryNames[category];
-  $('breadcrumb-current').textContent = categoryNames[category];
-  $('category-description').textContent = categoryDescriptions[category];
-  renderCards();
+document.querySelectorAll('#workspace-nav .nav-item').forEach((button) => button.addEventListener('click', () => {
+  workspace = button.dataset.workspace;
+  document.querySelectorAll('#workspace-nav .nav-item').forEach((item) => item.classList.toggle('active', item === button));
+  $('breadcrumb-current').textContent = workspace === 'logs' ? '日志' : '指令';
+  document.querySelector('.command-section').hidden = workspace !== 'commands';
+  $('log-section').hidden = workspace !== 'logs';
+  $('command-actions').hidden = workspace !== 'commands';
+  $('compare-control').hidden = workspace !== 'commands';
 }));
 $('search').addEventListener('input', renderCards);
 $('add-command').addEventListener('click', () => openCommandDialog());
@@ -292,20 +284,31 @@ $('manage-command').addEventListener('click', openManager);
 $('manager-add').addEventListener('click', () => openCommandDialog());
 $('command-form').addEventListener('submit', saveCommand);
 $('delete-command').addEventListener('click', async () => {
-  if (!editingId || !confirm('确定删除这条命令吗？')) return;
-  try { commands = await api.deleteCommand(editingId); $('command-dialog').close(); renderCards(); toast('命令已删除'); }
+  if (!editingId || !confirm('确定删除这条指令吗？')) return;
+  try { commands = await api.deleteCommand(editingId); $('command-dialog').close(); renderCards(); toast('指令已删除'); }
   catch (error) { $('form-error').textContent = error.message; $('form-error').hidden = false; }
 });
 document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => $(button.dataset.close).close()));
 $('reorder').addEventListener('click', () => { reorder = !reorder; $('reorder').classList.toggle('active', reorder); $('reorder').textContent = reorder ? '完成排序' : '调整顺序'; renderCards(); });
 $('refresh-device').addEventListener('click', async () => { device = await api.checkDevice(); renderDevice(); toast(device.state === 'connected' ? '设备已连接' : device.message); });
-$('install-apk').addEventListener('click', async () => { stopAuto(); try { await api.installApk(); } catch (error) { toast(error.message); } });
+$('install-apk').addEventListener('click', async () => { try { await api.installApk(); } catch (error) { toast(error.message); } });
+document.querySelectorAll('.choose-log-path').forEach((button) => button.addEventListener('click', async () => {
+  try {
+    const selected = await api.chooseLogPath(button.dataset.kind);
+    if (selected) $(`${button.dataset.kind}-path`).value = selected;
+  } catch (error) { toast(error.message); }
+}));
+document.querySelectorAll('.capture-log').forEach((button) => button.addEventListener('click', () => captureLog(button.dataset.kind)));
+for (const kind of ['kernel', 'logcat']) $(`${kind}-path`).addEventListener('change', async (event) => {
+  try { event.target.value = await api.setLogPath(kind, event.target.value); }
+  catch (error) { toast(error.message); }
+});
 $('open-converter').addEventListener('click', () => $('converter-dialog').showModal());
 $('convert-plain').addEventListener('click', () => convert('plain'));
 $('convert-cstyle').addEventListener('click', () => convert('cstyle'));
 $('copy-converted').addEventListener('click', async () => { await navigator.clipboard.writeText($('converter-output').value); toast('已复制转换结果'); });
-$('stop').addEventListener('click', async () => { stopAuto(); await api.stop(); running = false; setOutputState('已停止'); renderCards(); });
-$('clear').addEventListener('click', async () => { stopAuto(); await api.stop(); running = false; setOutput(''); setOutputState('就绪'); });
+$('stop').addEventListener('click', async () => { await api.stop(); running = false; setOutputState('已停止'); renderCards(); });
+$('clear').addEventListener('click', async () => { await api.stop(); running = false; setOutput(''); $('saved-path').hidden = true; setOutputState('就绪'); });
 $('copy').addEventListener('click', async () => { await navigator.clipboard.writeText(output); toast('已复制输出'); });
 $('save').addEventListener('click', async () => { if (await api.saveOutput(output)) toast('输出已保存'); });
 $('compare-toggle').addEventListener('change', () => { previous.clear(); $('compare-note').hidden = true; });
@@ -322,6 +325,7 @@ document.addEventListener('keydown', (event) => {
   }
 });
 api.onAdbEvent(onAdbEvent);
-api.onDeviceChanged((next) => { device = next; if (next.state !== 'connected' && auto) stopAuto(); renderDevice(); });
+api.onDeviceChanged((next) => { device = next; renderDevice(); });
 refreshCommands().catch((error) => toast(error.message));
+api.getLogPaths().then((paths) => { for (const kind of ['kernel', 'logcat']) $(`${kind}-path`).value = paths[kind]; }).catch((error) => toast(error.message));
 api.checkDevice().then((next) => { device = next; renderDevice(); });
