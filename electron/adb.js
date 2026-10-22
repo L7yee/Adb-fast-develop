@@ -112,7 +112,7 @@ class AdbRunner {
   async install(apkPath, serial) {
     this.stop();
     const sequence = this.sequence;
-    const child = spawn('adb', ['-s', serial, 'install', '-r', apkPath], { windowsHide: true, shell: false });
+    const child = spawn('adb', ['-s', serial, 'install', '-r', '-g', apkPath], { windowsHide: true, shell: false });
     this.child = child;
     let failed = false;
     this.send({ type: 'start', id: '__install__', label: '安装 APK', shell: apkPath });
