@@ -40,6 +40,7 @@ function renderDevice() {
   $('overview-device').textContent = connected ? device.serial : (names[device.state] || '检测中');
   $('overview-root').textContent = connected ? (device.root ? '已获得' : '未获得') : '—';
   $('install-apk').disabled = !connected;
+  document.querySelector('[data-rail-tool="install-apk"]').disabled = !connected;
   renderCards();
 }
 
@@ -292,12 +293,29 @@ async function refreshCommands() { commands = await api.listCommands(); renderCa
 document.querySelectorAll('#workspace-nav .nav-item').forEach((button) => button.addEventListener('click', () => {
   workspace = button.dataset.workspace;
   document.querySelectorAll('#workspace-nav .nav-item').forEach((item) => item.classList.toggle('active', item === button));
+  document.querySelectorAll('[data-rail-workspace]').forEach((item) => item.classList.toggle('active', item.dataset.railWorkspace === workspace));
   $('breadcrumb-current').textContent = workspace === 'logs' ? '日志' : '指令';
   document.querySelector('.command-section').hidden = workspace !== 'commands';
   $('log-section').hidden = workspace !== 'logs';
   $('command-actions').hidden = workspace !== 'commands';
   $('compare-control').hidden = workspace !== 'commands';
 }));
+document.querySelectorAll('[data-rail-workspace]').forEach((button) => button.addEventListener('click', () => {
+  document.querySelector(`#workspace-nav [data-workspace="${button.dataset.railWorkspace}"]`).click();
+}));
+document.querySelectorAll('[data-rail-tool]').forEach((button) => button.addEventListener('click', () => {
+  $(button.dataset.railTool).click();
+}));
+$('sidebar-toggle').addEventListener('click', () => {
+  const collapsed = document.querySelector('.sidebar').classList.toggle('collapsed');
+  $('sidebar-toggle').setAttribute('aria-expanded', String(!collapsed));
+  $('sidebar-toggle').setAttribute('aria-label', collapsed ? '展开侧栏' : '折叠侧栏');
+  $('sidebar-toggle').title = collapsed ? '展开侧栏' : '折叠侧栏';
+});
+document.querySelector('.sidebar-search').addEventListener('click', () => {
+  if (document.querySelector('.sidebar').classList.contains('collapsed')) $('sidebar-toggle').click();
+  $('search').focus();
+});
 $('search').addEventListener('input', renderCards);
 $('add-command').addEventListener('click', () => openCommandDialog());
 $('manage-command').addEventListener('click', openManager);

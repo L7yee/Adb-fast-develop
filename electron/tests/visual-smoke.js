@@ -8,6 +8,7 @@ app.on('browser-window-created', (_event, win) => {
   win.webContents.once('did-finish-load', async () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1600));
+      win.setContentSize(1280, 800);
       const info = await win.webContents.executeJavaScript(`({title: document.title, cards: document.querySelectorAll('.command-card').length, status: document.getElementById('device-title').textContent, errors: document.getElementById('toast').textContent})`);
       if (info.cards < 10) throw new Error(`Only ${info.cards} commands rendered`);
       const identity = await win.webContents.executeJavaScript(`(() => {
@@ -23,6 +24,31 @@ app.on('browser-window-created', (_event, win) => {
         document.getElementById('overview-device').textContent = ${JSON.stringify(identity[0])};
         document.getElementById('device-subtitle').textContent = ${JSON.stringify(identity[1])};
       })()`);
+      const sidebar = await win.webContents.executeJavaScript(`(() => {
+        document.getElementById('sidebar-toggle').click();
+        const collapsed = document.querySelector('.sidebar').classList.contains('collapsed');
+        document.querySelector('[data-rail-workspace="logs"]').click();
+        const railChanged = document.getElementById('breadcrumb-current').textContent === '日志';
+        document.querySelector('[data-rail-workspace="commands"]').click();
+        document.querySelector('.sidebar-search').click();
+        const expanded = !document.querySelector('.sidebar').classList.contains('collapsed');
+        const search = document.getElementById('search');
+        search.value = 'MTK';
+        search.dispatchEvent(new Event('input'));
+        const filtered = document.querySelectorAll('.command-card').length;
+        search.value = '';
+        search.dispatchEvent(new Event('input'));
+        return { collapsed, railChanged, expanded, filtered };
+      })()`);
+      if (!sidebar.collapsed || !sidebar.railChanged || !sidebar.expanded || sidebar.filtered < 1 || sidebar.filtered >= info.cards) throw new Error(`Sidebar interaction failed: ${JSON.stringify(sidebar)}`);
+      win.setContentSize(1000, 700);
+      const compact = await win.webContents.executeJavaScript(`(() => {
+        const command = document.querySelector('.command-section').getBoundingClientRect();
+        const result = document.querySelector('.output-section').getBoundingClientRect();
+        return { commandHeight: command.height, resultTop: result.top, resultBottom: result.bottom, height: innerHeight };
+      })()`);
+      if (compact.commandHeight < 200 || compact.resultTop >= compact.height || compact.resultBottom > compact.height) throw new Error(`Compact layout failed: ${JSON.stringify(compact)}`);
+      win.setContentSize(1280, 800);
       const interactions = await win.webContents.executeJavaScript(`(async () => {
         document.getElementById('add-command').click();
         const form = document.getElementById('command-form');
@@ -99,7 +125,7 @@ app.on('browser-window-created', (_event, win) => {
           captured[kind] = fs.statSync(paths[kind]).size;
         }
       }
-      console.log(JSON.stringify({ ...info, interactions, clock, logs, captured }));
+      console.log(JSON.stringify({ ...info, sidebar, compact, interactions, clock, logs, captured }));
       app.quit();
     } catch (error) {
       console.error(error);

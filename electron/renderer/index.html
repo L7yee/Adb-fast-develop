@@ -7,21 +7,50 @@
   <title>ADB Dashboard</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="manager.css">
+  <link rel="stylesheet" href="dark.css">
 </head>
 <body>
+  <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-dashboard" viewBox="0 0 32 32"><path d="M24 21H26V26H24zM20 16H22V26H20zM11 26a5 5 0 01-5-5H8a3 3 0 103-3v-2a5 5 0 010 10z"/><path d="M28 2H4a2 2 0 00-2 2v24a2 2 0 002 2h24a2 2 0 002-2V4a2 2 0 00-2-2zm0 9H14V4h14zM12 4v7H4V4zM4 28V13h24v15z"/></symbol>
+    <symbol id="icon-logs" viewBox="0 0 32 32"><path d="M14 20.18L10.41 16.59 9 18 14 23 23 14 21.59 12.58 14 20.18z"/><path d="M25 5h-3V4a2 2 0 00-2-2h-8a2 2 0 00-2 2v1H7a2 2 0 00-2 2v21a2 2 0 002 2h18a2 2 0 002-2V7a2 2 0 00-2-2zM12 4h8v4h-8zm13 24H7V7h3v3h12V7h3z"/></symbol>
+    <symbol id="icon-folder" viewBox="0 0 32 32"><path d="M11.17 6l3.42 3.41.58.59H28v16H4V6h7.17m0-2H4a2 2 0 00-2 2v20a2 2 0 002 2h24a2 2 0 002-2V10a2 2 0 00-2-2H16l-3.41-3.41A2 2 0 0011.17 4z"/></symbol>
+    <symbol id="icon-chart" viewBox="0 0 32 32"><path d="M4 2H2v26a2 2 0 002 2h26v-2H4z"/><path d="M30 9h-7v2h3.59L19 18.59l-4.29-4.3a1 1 0 00-1.42 0L6 21.59 7.41 23 14 16.41l4.29 4.3a1 1 0 001.42 0L28 12.41V16h2z"/></symbol>
+    <symbol id="icon-install" viewBox="0 0 32 32"><path d="M30 24h-4v-4h-2v4h-4v2h4v4h2v-4h4z"/><path d="M16 28H8V4h8v6a2 2 0 002 2h6v4h2v-6a1 1 0 00-.3-.7l-7-7A1 1 0 0018 2H8a2 2 0 00-2 2v24a2 2 0 002 2h8zM18 4.4 23.6 10H18z"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 16 16"><path d="M15 14.3 10.7 10c1.9-2.3 1.6-5.8-.7-7.7S4.2.7 2.3 3 .7 8.8 3 10.7c2 1.7 5 1.7 7 0l4.3 4.3zM2 6.5C2 4 4 2 6.5 2S11 4 11 6.5 9 11 6.5 11 2 9 2 6.5z"/></symbol>
+    <symbol id="icon-eye" viewBox="0 0 16 16"><path d="M15.5 7.8C14.3 4.7 11.3 2.6 8 2.5 4.7 2.6 1.7 4.7.5 7.8v.3c1.2 3.1 4.1 5.2 7.5 5.3 3.3-.1 6.3-2.2 7.5-5.3v-.3zM8 12.5c-2.7 0-5.4-2-6.5-4.5 1-2.5 3.8-4.5 6.5-4.5s5.4 2 6.5 4.5C13.4 10.5 10.6 12.5 8 12.5z"/><path d="M8 5a3 3 0 100 6 3 3 0 000-6zm0 5a2 2 0 110-4 2 2 0 010 4z"/></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 16 16"><path d="m5 8 5-5 .7.7L6.4 8l4.3 4.3-.7.7z"/></symbol>
+    <symbol id="icon-user" viewBox="0 0 16 16"><path d="M8 2a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm0-1a3.5 3.5 0 100 7 3.5 3.5 0 000-7zm5 14h-1v-2.5A2.5 2.5 0 009.5 10h-3A2.5 2.5 0 004 12.5V15H3v-2.5A3.5 3.5 0 016.5 9h3a3.5 3.5 0 013.5 3.5z"/></symbol>
+  </svg>
   <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">⌘</span><div><strong>ADB Dashboard</strong><small>Android 调试工作台</small></div></div>
-      <div class="sidebar-label">工作区</div>
-      <nav id="workspace-nav" aria-label="工作区">
-        <button class="nav-item active" data-workspace="commands"><span class="nav-icon">▦</span>指令 <span id="count-all" class="nav-count">0</span></button>
-        <button class="nav-item" data-workspace="logs"><span class="nav-icon">◫</span>日志</button>
-      </nav>
-      <div class="sidebar-label tools-label">工具</div>
-      <button class="nav-item" id="install-apk"><span class="nav-icon">↓</span>安装 APK</button>
-      <button class="nav-item" id="open-converter"><span class="nav-icon">⌁</span>Init Cmd 转换</button>
-      <button class="nav-item" id="open-mipi-clock"><span class="nav-icon">◷</span>MIPI CLK 计算</button>
-      <div class="sidebar-bottom"><div class="device-mini"><span id="device-dot" class="status-dot"></span><div><strong id="device-title">正在检测设备</strong><small id="device-subtitle">请稍候…</small></div></div><button id="refresh-device" class="icon-button" title="刷新设备状态" aria-label="刷新设备状态">↻</button></div>
+    <aside class="sidebar" aria-label="主导航">
+      <div class="sidebar-rail">
+        <div class="rail-brand"><img src="../resources/icon.png" alt="ADB Dashboard"></div>
+        <div class="rail-actions">
+          <button class="rail-item active" data-rail-workspace="commands" title="指令" aria-label="指令"><svg><use href="#icon-dashboard"></use></svg></button>
+          <button class="rail-item" data-rail-workspace="logs" title="日志" aria-label="日志"><svg><use href="#icon-logs"></use></svg></button>
+          <button class="rail-item" data-rail-tool="install-apk" title="安装 APK" aria-label="安装 APK"><svg><use href="#icon-install"></use></svg></button>
+          <button class="rail-item" data-rail-tool="open-converter" title="Init Cmd 转换" aria-label="Init Cmd 转换"><svg><use href="#icon-folder"></use></svg></button>
+          <button class="rail-item" data-rail-tool="open-mipi-clock" title="MIPI CLK 计算" aria-label="MIPI CLK 计算"><svg><use href="#icon-chart"></use></svg></button>
+        </div>
+        <div class="rail-bottom"><button id="refresh-device" class="rail-item" title="刷新设备状态" aria-label="刷新设备状态">↻</button><span class="rail-device" title="设备状态"><svg><use href="#icon-user"></use></svg><span id="device-dot" class="status-dot"></span></span></div>
+      </div>
+      <div class="sidebar-panel">
+        <div class="sidebar-head"><strong>ADB Dashboard</strong><button id="sidebar-toggle" class="sidebar-toggle" aria-label="折叠侧栏" aria-expanded="true" title="折叠侧栏"><svg><use href="#icon-chevron"></use></svg></button></div>
+        <label class="sidebar-search"><svg><use href="#icon-search"></use></svg><input id="search" placeholder="搜索指令..." aria-label="搜索指令"></label>
+        <div class="sidebar-scroll">
+          <div class="sidebar-label">工作区</div>
+          <nav id="workspace-nav" aria-label="工作区">
+            <button class="nav-item active" data-workspace="commands"><span class="nav-icon"><svg><use href="#icon-eye"></use></svg></span><span class="nav-text">指令</span><span id="count-all" class="nav-count">0</span></button>
+            <button class="nav-item" data-workspace="logs"><span class="nav-icon"><svg><use href="#icon-logs"></use></svg></span><span class="nav-text">日志</span></button>
+          </nav>
+          <div class="sidebar-label tools-label">设备操作</div>
+          <button class="nav-item" id="install-apk"><span class="nav-icon"><svg><use href="#icon-install"></use></svg></span><span class="nav-text">安装 APK</span></button>
+          <button class="nav-item" id="open-converter"><span class="nav-icon"><svg><use href="#icon-folder"></use></svg></span><span class="nav-text">Init Cmd 转换</span></button>
+          <div class="sidebar-label tools-label">计算工具</div>
+          <button class="nav-item" id="open-mipi-clock"><span class="nav-icon"><svg><use href="#icon-chart"></use></svg></span><span class="nav-text">MIPI CLK 计算</span></button>
+        </div>
+        <div class="sidebar-bottom"><div class="device-mini"><strong id="device-title">正在检测设备</strong><small id="device-subtitle">请稍候…</small></div></div>
+      </div>
     </aside>
 
     <main class="main">
@@ -30,7 +59,7 @@
         <section class="command-section">
           <div class="hero"><div><div class="eyebrow">ADB CONTROL CENTER</div><h1>指令</h1><p>连接设备，点击指令，查看这一次的执行结果。</p></div><div class="hero-graphic" aria-hidden="true"><span class="hero-ring ring-a"></span><span class="hero-ring ring-b"></span><span class="hero-core">⌘</span></div></div>
           <div class="overview"><div class="overview-item"><span class="overview-icon blue">▣</span><div><small>设备状态</small><strong id="overview-device">检测中</strong></div></div><div class="overview-item"><span class="overview-icon green">◆</span><div><small>Root 权限</small><strong id="overview-root">检测中</strong></div></div><div class="overview-item"><span class="overview-icon purple">⌘</span><div><small>可用指令</small><strong id="overview-count">0 个</strong></div></div></div>
-          <div class="section-heading"><div><h2>指令库 <span id="visible-count" class="heading-count">0</span></h2><p>每次点击只执行一次</p></div><div class="section-tools"><label class="search-box"><span>⌕</span><input id="search" placeholder="搜索指令或内容" aria-label="搜索指令"></label><button id="reorder" class="button subtle" title="拖动卡片调整顺序">调整顺序</button></div></div>
+          <div class="section-heading"><div><h2>指令库 <span id="visible-count" class="heading-count">0</span></h2><p>每次点击只执行一次</p></div><div class="section-tools"><button id="reorder" class="button subtle" title="拖动卡片调整顺序">调整顺序</button></div></div>
           <div id="command-grid" class="command-grid"></div>
           <div id="empty-state" class="empty-state" hidden><div>⌕</div><strong>没有找到指令</strong><p>换个关键词，或新建一条指令。</p></div>
         </section>

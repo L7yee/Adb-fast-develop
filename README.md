@@ -1,6 +1,6 @@
 # ADB Dashboard
 
-一款基于 Electron 的开源 Android ADB 调试桌面工具。当前维护的应用位于 [`electron/`](electron/)，采用简洁的 macOS 风格界面；旧版 Python/PyQt 源码完整归档于 [`legacy-python/`](legacy-python/)。
+一款基于 Electron 的开源 Android ADB 调试桌面工具。当前维护的应用位于 [`electron/`](electron/)，采用深色双栏侧边导航界面；旧版 Python/PyQt 源码完整归档于 [`legacy-python/`](legacy-python/)。
 
 ## 目录
 
@@ -43,6 +43,7 @@ npm run dist
 - 在“日志”工作区分别抓取内核日志（`dmesg`）与 Logcat 日志（`logcat -d`）；两种日志的保存路径可分别修改，抓取完成后自动保存。同一路径再次抓取会覆盖旧文件。
 - 添加、编辑、删除及排序命令，安装 APK（自动授予运行时权限；遇到目标 SDK 版本过低时使用兼容参数重试一次），保存或复制输出，转换 Init Cmd。
 - MIPI CLK 计算工具：输入显示时序、目标 FPS、DPI 时钟源与 Lane 数，计算所需 DPI 时钟、分频值、实际 FPS 和 MIPI CLK。
+- 深色导航可折叠，左侧图标栏可快速切换工作区和打开工具；导航顶部可搜索指令。
 - `Ctrl+1` 至 `Ctrl+0` 运行前十条命令，`Ctrl+R` 刷新设备，`Ctrl+S` 保存输出，`Esc` 停止。
 
 ## 开源协议

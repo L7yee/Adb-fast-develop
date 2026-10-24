@@ -1,0 +1,92 @@
+@font-face{font-family:Lexend;src:url('assets/lexend-latin.woff2') format('woff2');font-weight:100 900;font-display:swap}
+:root{font-family:Lexend,"Segoe UI","Microsoft YaHei",sans-serif;color:#f5f5f5;background:#1a1a1a}
+body{background:#1a1a1a}button,input,textarea,select{font-family:inherit}
+.icon-sprite{position:absolute;width:0;height:0;overflow:hidden}
+.app-shell{background:#171717}
+.sidebar{width:336px;padding:0;display:flex;flex-direction:row;background:#000;border-right:1px solid #272727;transition:width .25s ease}
+.sidebar-rail{width:56px;flex:none;display:flex;flex-direction:column;align-items:center;padding:14px 10px;border-right:1px solid #262626}
+.rail-brand{height:42px;display:grid;place-items:center;margin-bottom:8px}
+.rail-brand img{width:25px;height:25px;object-fit:contain;filter:grayscale(1) brightness(1.6)}
+.rail-actions{display:grid;gap:6px}
+.rail-item{width:36px;height:36px;border:0;border-radius:9px;color:#a3a3a3;background:transparent;display:grid;place-items:center}
+.rail-item svg,.rail-device svg,.nav-icon svg,.sidebar-search svg,.sidebar-toggle svg{width:16px;height:16px;fill:currentColor;flex:none}
+.rail-item:hover,.rail-item.active{background:#202020;color:#f5f5f5}
+.rail-item:disabled{opacity:.35}
+.rail-bottom{margin-top:auto;display:grid;gap:8px;justify-items:center}
+.rail-bottom .rail-item{font-size:21px}
+.rail-device{position:relative;width:28px;height:28px;border:1px solid #303030;border-radius:50%;display:grid;place-items:center;color:#d5d5d5}
+.rail-device .status-dot{position:absolute;right:-2px;bottom:-2px;width:7px;height:7px;box-shadow:0 0 0 2px #000}
+.sidebar-panel{width:280px;min-width:0;display:flex;flex-direction:column;background:#000;transition:width .25s ease}
+.sidebar-head{height:56px;padding:0 16px 0 20px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sidebar-head strong{font-size:18px;letter-spacing:-.45px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-toggle{width:30px;height:30px;border:0;background:transparent;color:#969696;border-radius:8px;display:grid;place-items:center}
+.sidebar-toggle:hover{background:#1b1b1b;color:#f5f5f5}
+.sidebar-search{height:36px;margin:7px 14px 15px;border:1px solid #303030;border-radius:9px;display:flex;align-items:center;gap:9px;padding:0 10px;color:#bcbcbc;flex:none}
+.sidebar-search:focus-within{border-color:#686868}
+.sidebar-search input{border:0;outline:0;width:100%;min-width:0;background:transparent;color:#f5f5f5;font-size:13px}
+.sidebar-search input::placeholder{color:#929292}
+.sidebar-scroll{flex:1;min-height:0;overflow:auto;padding:0 14px 12px;scrollbar-color:#353535 transparent;scrollbar-width:thin}
+.sidebar-label{padding:0 15px;color:#9e9e9e;font-size:12px;font-weight:400;letter-spacing:0;margin:10px 0 8px}
+.tools-label{margin-top:26px}
+.nav-item{height:38px;margin-bottom:2px;padding:0 13px;gap:11px;color:#e6e6e6;font-size:13px;font-weight:500;border-radius:8px;white-space:nowrap}
+.nav-item:hover,.nav-item.active{background:#1f1f1f;color:#fff}
+.nav-icon{width:16px;height:16px;display:grid;place-items:center;color:#d6d6d6}
+.nav-count{font-size:10px;color:#888}
+.active .nav-count{color:#bbb}
+.sidebar-bottom{margin-top:auto;margin-bottom:0;padding:13px 18px;border-top:1px solid #252525;color:#e7e7e7;min-height:61px}
+.device-mini strong{font-size:11px}.device-mini small{font-size:10px;color:#888}
+.sidebar.collapsed{width:112px}.sidebar.collapsed .sidebar-panel{width:56px}
+.sidebar.collapsed .sidebar-head{padding:0;justify-content:center}
+.sidebar.collapsed .sidebar-head strong,.sidebar.collapsed .sidebar-label,.sidebar.collapsed .nav-text,.sidebar.collapsed .nav-count,.sidebar.collapsed .sidebar-bottom{display:none}
+.sidebar.collapsed .sidebar-toggle svg{transform:rotate(180deg)}
+.sidebar.collapsed .sidebar-search{width:36px;height:36px;margin:7px auto 15px;padding:0;justify-content:center;cursor:pointer}
+.sidebar.collapsed .sidebar-search input{display:none}
+.sidebar.collapsed .sidebar-scroll{padding:0 10px}
+.sidebar.collapsed .nav-item{width:36px;height:36px;padding:0;justify-content:center;margin-bottom:4px}
+.main{background:#171717}
+.topbar{background:#171717;border-bottom:1px solid #2a2a2a}
+.breadcrumbs{color:#888}.breadcrumbs span{color:#555}.breadcrumbs strong{color:#e5e5e5}
+.button{box-shadow:none!important;font-weight:550;transition:background .15s,color .15s,transform .15s}
+.button.primary{background:#f1f1f1;color:#101010}.button.primary:hover{background:#d8d8d8}
+.button.secondary{background:#202020;color:#f1f1f1;border:1px solid #383838}.button.secondary:hover{background:#2a2a2a}
+.button.subtle{background:#242424;color:#c3c3c3}.button.subtle:hover{background:#303030}
+.button.danger{background:#35201f;color:#ffaaa4}
+.icon-button{color:#a4a4a4}.icon-button:hover{background:#282828;color:#fff}
+.workspace{background:#171717}
+.command-section{scrollbar-color:#3a3a3a transparent;scrollbar-width:thin}
+.hero,.log-hero{background:#0b0b0b;border:1px solid #303030;box-shadow:none;height:148px;color:#fff;padding:27px 29px}
+.hero-graphic{display:none}.hero .eyebrow{color:#919191}.hero h1{margin:10px 0 8px}.hero p{color:#a6a6a6}
+.log-hero{height:132px}.log-hero h1{margin:10px 0 7px}
+.eyebrow{color:#8d8d8d}
+.overview-item,.command-card,.log-card,.output-section{background:#0b0b0b;border:1px solid #303030;box-shadow:none;color:#f3f3f3}
+.overview-icon.blue,.overview-icon.green,.overview-icon.purple,.card-icon.read,.card-icon.action{background:#242424;color:#e2e2e2}
+.overview-item small,.section-heading p,.log-card p{color:#929292}
+.overview-item strong,.section-heading h2,.command-card h3,.log-card h2{color:#f5f5f5}
+.heading-count,.tag{background:#252525;color:#aaa}
+.command-card:hover{border-color:#565656;box-shadow:none}.command-card.running{border-color:#c6c6c6;box-shadow:0 0 0 2px #ffffff17}
+.card-main code,.manager-item small{color:#898989}
+.card-menu{color:#aaa}.card-menu:hover{background:#282828;color:#fff}
+.tag.root{background:#342d1f;color:#d9be85}
+.run-button{color:#e7e7e7}
+.empty-state,.empty-state strong{color:#aaa}
+.output-header h2,.output-command strong{color:#f5f5f5}
+.output-pill{background:#242424;color:#bcbcbc}.output-pill.running{background:#302a22;color:#e2bd8b}.output-pill.error{background:#3b2424;color:#f1a3a3}
+.output-command{background:#1a1a1a}.output-command small,.output-command code{color:#939393}
+.output-text{background:#050505;color:#d8d8d8}
+.placeholder-output{color:#929292}
+.output-footer,.compare-control{border-color:#272727}
+.switch-row small{color:#8f8f8f}.switch{background:#454545}.switch-row input:checked+.switch{background:#dadada}
+.compare-note{background:#222;color:#c7c7c7}.saved-path{background:#17241d;color:#a4d5b6}
+.log-card label,.modal-body label{color:#c7c7c7}
+.log-card input,.modal-body input:not([type=checkbox]),.modal-body textarea,.modal-body select{background:#171717;border:1px solid #3b3b3b;color:#f3f3f3}
+.log-card input:focus,.modal-body input:focus,.modal-body textarea:focus,.modal-body select:focus{border-color:#a0a0a0;box-shadow:0 0 0 2px #ffffff16}
+.modal{background:#0d0d0d;color:#f3f3f3;border:1px solid #363636;box-shadow:0 25px 80px #0009}
+.modal::backdrop{background:#0009;backdrop-filter:blur(4px)}
+.modal-header{border-color:#2b2b2b}.modal-header h2{color:#fff}
+.close-button{background:#242424;color:#b4b4b4}.close-button:hover{background:#333;color:#fff}
+.modal-footer{border-top:1px solid #252525}
+.manager-item{background:#0d0d0d;color:#f0f0f0;border-color:#282828}.manager-item:hover{color:#fff;background:#1d1d1d}.manager-item>span:last-child{color:#999}
+.clock-group h3{color:#f5f5f5}.clock-result{background:#191919;border:1px solid #323232}.clock-result.primary-result{background:#242424;border-color:#494949}
+.clock-result small,.clock-result span,.clock-note{color:#9b9b9b}.clock-result strong,.clock-result.primary-result strong{color:#fff}
+.toast{background:#ededed;color:#111;box-shadow:0 10px 30px #0008}
+@media(max-width:1200px){.workspace{grid-template-columns:1fr;grid-template-rows:minmax(220px,1fr) minmax(220px,.8fr)}.command-section{overflow:auto}.output-section{min-height:0}.sidebar.collapsed{width:112px}.sidebar.collapsed .sidebar-panel{width:56px}}
