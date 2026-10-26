@@ -34,7 +34,7 @@ cd electron
 npm run dist
 ```
 
-产物位于 `electron/dist/`，此目录不会提交到 Git。应用默认命令来自 `electron/config/commands.yaml`；首次运行后，用户修改的命令与窗口设置保存在 Electron 用户数据目录。
+产物位于 `electron/dist/`，此目录不会提交到 Git。希望启动更快时使用安装版；便携版每次打开都需要解压，已采用解压更快的打包方式。应用默认命令来自 `electron/config/commands.yaml`；首次运行后，用户修改的命令与窗口设置保存在 Electron 用户数据目录。
 
 ## 功能
 
