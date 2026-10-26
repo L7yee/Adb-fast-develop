@@ -27,14 +27,14 @@ npm ci
 npm start
 ```
 
-Windows 下也可以在安装依赖后双击 `electron/启动ADB Dashboard.bat`。生成 Windows 安装版和便携版：
+Windows 下也可以在安装依赖后双击 `electron/启动ADB Dashboard.bat`。生成 Windows 安装版和快速便携 ZIP：
 
 ```powershell
 cd electron
 npm run dist
 ```
 
-产物位于 `electron/dist/`，此目录不会提交到 Git。希望启动更快时使用安装版；便携版每次打开都需要解压，已采用解压更快的打包方式。应用默认命令来自 `electron/config/commands.yaml`；首次运行后，用户修改的命令与窗口设置保存在 Electron 用户数据目录。
+产物位于 `electron/dist/`，此目录不会提交到 Git；可从 [GitHub Releases](https://github.com/L7yee/Adb-fast-develop/releases) 下载。便携 ZIP 只需解压一次，之后直接运行解压目录中的 `ADB Dashboard.exe`，无需每次启动重新解压。应用默认命令来自 `electron/config/commands.yaml`；首次运行后，用户修改的命令与窗口设置保存在 Electron 用户数据目录。
 
 ## 功能
 
