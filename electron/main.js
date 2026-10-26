@@ -2,13 +2,15 @@ const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { CommandStore } = require('./config');
-const { AdbRunner, checkDevice } = require('./adb');
+const { AdbRunner, checkDevice, rootDevice } = require('./adb');
 
 let window;
 let store;
 let runner;
 let device = { state: 'disconnected' };
 let checking = null;
+let rootedSerial = null;
+let missedDeviceChecks = 0;
 const LOG_COMMANDS = {
   kernel: { id: '__kernel_log__', label: '内核日志', shell_command: 'dmesg' },
   logcat: { id: '__logcat_log__', label: 'Logcat 日志', shell_command: 'logcat -d' }
@@ -77,11 +79,24 @@ function createWindow() {
 
 async function refreshDevice() {
   if (checking) return checking;
-  checking = checkDevice().then((result) => {
+  checking = checkDevice().then(async (detected) => {
+    let result = detected;
+    if (result.state === 'connected' && rootedSerial !== result.serial) {
+      rootedSerial = result.serial;
+      try { await rootDevice(result.serial); } catch { /* Keep checking if adb root is unavailable. */ }
+      result = await checkDevice();
+    }
     const wasConnected = device.state === 'connected';
     device = result;
     if (window && !window.isDestroyed()) window.webContents.send('device:changed', result);
     if (wasConnected && result.state !== 'connected') runner.stop();
+    if (result.state === 'connected') {
+      missedDeviceChecks = 0;
+    } else if (result.state === 'disconnected' && ++missedDeviceChecks >= 3) {
+      rootedSerial = null;
+    } else if (result.state !== 'disconnected') {
+      missedDeviceChecks = 0;
+    }
     return result;
   }).finally(() => { checking = null; });
   return checking;

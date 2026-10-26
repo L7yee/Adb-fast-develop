@@ -51,6 +51,8 @@ async function checkDevice() {
   return { state: 'connected', serial, root, message: serial };
 }
 
+function rootDevice(serial, execute = collect) { return execute(['-s', serial, 'root'], 10000); }
+
 function shellArgs(serial, command) {
   if (!command.requires_root) return ['-s', serial, 'shell', command.shell_command];
   const quoted = command.shell_command.replace(/'/g, `'\\''`);
@@ -150,4 +152,4 @@ class AdbRunner {
   }
 }
 
-module.exports = { AdbRunner, checkDevice, parseDevices, shellArgs };
+module.exports = { AdbRunner, checkDevice, rootDevice, parseDevices, shellArgs };

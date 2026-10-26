@@ -55,10 +55,10 @@ function renderCards() {
     card.draggable = reorder;
     card.dataset.id = item.id;
     const icon = { read: '◫', action: '↗' }[item.category];
-    card.innerHTML = `<div class="card-top"><span class="card-icon ${item.category}">${icon}</span><button class="card-menu" title="编辑指令" aria-label="编辑指令">···</button></div><div class="card-main"><h3></h3><code></code></div><div class="card-footer"><div class="card-tags"></div><div class="card-actions"></div></div>`;
+    card.innerHTML = `<div class="card-top"><span class="card-icon ${item.category}">${icon}</span><button class="card-menu" title="编辑指令" aria-label="编辑指令">···</button></div><div class="card-main"><h3></h3><code></code></div><div class="card-footer"><div class="card-tags"></div></div>`;
     card.querySelector('h3').textContent = item.label;
     card.querySelector('code').textContent = item.shell_command;
-    card.querySelector('.card-menu').addEventListener('click', () => openCommandDialog(item));
+    card.querySelector('.card-menu').addEventListener('click', (event) => { event.stopPropagation(); openCommandDialog(item); });
     const tags = card.querySelector('.card-tags');
     const type = document.createElement('span');
     type.className = 'tag';
@@ -70,13 +70,18 @@ function renderCards() {
       root.textContent = 'ROOT';
       tags.append(' ', root);
     }
-    const actions = card.querySelector('.card-actions');
-    const run = document.createElement('button');
-    run.className = 'run-button';
-    run.textContent = activeId === item.id && running ? '运行中…' : '运行 ↗';
-    run.disabled = device.state !== 'connected' || reorder;
-    run.addEventListener('click', () => runCommand(item));
-    actions.append(run);
+    const clickable = device.state === 'connected' && !reorder;
+    card.classList.toggle('clickable', clickable);
+    card.tabIndex = clickable ? 0 : -1;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `执行指令：${item.label}`);
+    card.setAttribute('aria-disabled', String(!clickable));
+    card.addEventListener('click', () => { if (clickable) runCommand(item); });
+    card.addEventListener('keydown', (event) => {
+      if (event.target !== card || !clickable || !['Enter', ' '].includes(event.key)) return;
+      event.preventDefault();
+      runCommand(item);
+    });
     card.addEventListener('dragstart', (event) => { if (!reorder) return; event.dataTransfer.setData('text/plain', item.id); card.classList.add('dragging'); });
     card.addEventListener('dragend', () => card.classList.remove('dragging'));
     card.addEventListener('dragover', (event) => { if (reorder) event.preventDefault(); });

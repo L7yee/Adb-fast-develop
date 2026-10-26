@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
 const { CommandStore, normalizeCommand } = require('../config');
-const { AdbRunner, parseDevices, shellArgs } = require('../adb');
+const { AdbRunner, rootDevice, parseDevices, shellArgs } = require('../adb');
 const { calculateMipiClock } = require('../renderer/mipi-clock');
 
 test('imports valid commands from the existing YAML and persists edits', () => {
@@ -51,6 +51,12 @@ test('parses ADB states and keeps shell commands out of the host shell', () => {
   const command = normalizeCommand({ id: 'one', label: 'One', shell_command: 'echo a && echo b', category: 'read' });
   assert.deepEqual(shellArgs('ABC', command), ['-s', 'ABC', 'shell', 'echo a && echo b']);
   assert.match(shellArgs('ABC', { ...command, requires_root: true })[3], /^su 0 sh -c /);
+});
+
+test('targets the selected device with adb root', async () => {
+  let received;
+  await rootDevice('ABC', async (args, timeout) => { received = { args, timeout }; });
+  assert.deepEqual(received, { args: ['-s', 'ABC', 'root'], timeout: 10000 });
 });
 
 test('retries a deprecated SDK install once with the bypass flag and keeps -g', async () => {

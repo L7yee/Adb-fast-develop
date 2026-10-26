@@ -67,7 +67,8 @@ body{background:#1a1a1a}button,input,textarea,select{font-family:inherit}
 .card-main code,.manager-item small{color:#898989}
 .card-menu{color:#aaa}.card-menu:hover{background:#282828;color:#fff}
 .tag.root{background:#342d1f;color:#d9be85}
-.run-button{color:#e7e7e7}
+.command-card.clickable{cursor:pointer}
+.command-card.clickable:focus-visible{outline:2px solid #bcbcbc;outline-offset:2px}
 .empty-state,.empty-state strong{color:#aaa}
 .output-header h2,.output-command strong{color:#f5f5f5}
 .output-pill{background:#242424;color:#bcbcbc}.output-pill.running{background:#302a22;color:#e2bd8b}.output-pill.error{background:#3b2424;color:#f1a3a3}

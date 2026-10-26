@@ -11,6 +11,33 @@ app.on('browser-window-created', (_event, win) => {
       win.setContentSize(1280, 800);
       const info = await win.webContents.executeJavaScript(`({title: document.title, cards: document.querySelectorAll('.command-card').length, status: document.getElementById('device-title').textContent, errors: document.getElementById('toast').textContent})`);
       if (info.cards < 10) throw new Error(`Only ${info.cards} commands rendered`);
+      const cardAction = await win.webContents.executeJavaScript(`(() => {
+        const previousDevice = device;
+        const originalRun = runCommand;
+        let runs = 0;
+        try {
+          runCommand = () => { runs++; };
+          device = { state: 'disconnected' };
+          renderDevice();
+          document.querySelector('.command-card').click();
+          const disconnectedRuns = runs;
+          device = { state: 'connected', serial: 'SMOKE', root: false };
+          renderDevice();
+          const card = document.querySelector('.command-card');
+          card.click();
+          card.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+          card.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+          card.querySelector('.card-menu').click();
+          const menuOpened = document.getElementById('command-dialog').open;
+          document.getElementById('command-dialog').close();
+          return { disconnectedRuns, runs, menuOpened, runButtons: document.querySelectorAll('.run-button').length };
+        } finally {
+          runCommand = originalRun;
+          device = previousDevice;
+          renderDevice();
+        }
+      })()`);
+      if (cardAction.disconnectedRuns !== 0 || cardAction.runs !== 3 || !cardAction.menuOpened || cardAction.runButtons !== 0) throw new Error(`Card click failed: ${JSON.stringify(cardAction)}`);
       const identity = await win.webContents.executeJavaScript(`(() => {
         const ids = ['overview-device', 'device-subtitle'];
         const before = ids.map(id => document.getElementById(id).textContent);
