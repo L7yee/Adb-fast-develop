@@ -98,10 +98,10 @@ app.on('browser-window-created', (_event, win) => {
       if (interactions.added !== info.cards + 1 || interactions.managed !== info.cards + 1 || interactions.converted !== '15 00 00 02 01 02') throw new Error(`UI interaction failed: ${JSON.stringify(interactions)}`);
       const clock = await win.webContents.executeJavaScript(`(() => {
         document.getElementById('open-mipi-clock').click();
-        return { open: document.getElementById('mipi-clock-dialog').open,
+        return { open: document.getElementById('mipi-clock-dialog').open, unit: document.getElementById('clock-needed').nextElementSibling.textContent,
           values: ['clock-needed', 'clock-divider', 'clock-fps', 'clock-mipi'].map(id => document.getElementById(id).textContent) };
       })()`);
-      if (!clock.open || JSON.stringify(clock.values) !== JSON.stringify(['191.2896', '1', '60', '1,280'])) throw new Error(`MIPI clock UI failed: ${JSON.stringify(clock)}`);
+      if (!clock.open || clock.unit !== 'Hz' || JSON.stringify(clock.values) !== JSON.stringify(['191,289,600', '1', '60', '1,280'])) throw new Error(`MIPI clock UI failed: ${JSON.stringify(clock)}`);
       const changedClock = await win.webContents.executeJavaScript(`(() => {
         const form = document.getElementById('mipi-clock-form');
         form.elements.sourceMHz.value = '300';

@@ -281,7 +281,7 @@ function updateMipiClock(event) {
     const result = calculateMipiClock(Object.fromEntries(new FormData(event.currentTarget)));
     const format = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 4 });
     $('clock-mipi').textContent = format.format(result.mipiClockMHzInteger);
-    $('clock-needed').textContent = format.format(result.neededDpiHz / 1000000);
+    $('clock-needed').textContent = format.format(result.neededDpiHz);
     $('clock-divider').textContent = format.format(result.divider);
     $('clock-fps').textContent = format.format(result.actualFpsInteger);
     $('clock-fps-detail').textContent = `未取整 ${format.format(result.actualFps)} FPS`;
