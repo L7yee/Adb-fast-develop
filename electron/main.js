@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { CommandStore } = require('./config');
 const { AdbRunner, checkDevice, rootDevice } = require('./adb');
+const { readDisplayInfo } = require('./display-info');
 
 let window;
 let store;
@@ -118,6 +119,11 @@ ipcMain.handle('commands:save', (_event, command, previousId) => store.save(comm
 ipcMain.handle('commands:delete', (_event, id) => store.delete(id));
 ipcMain.handle('commands:reorder', (_event, ids) => store.reorder(ids));
 ipcMain.handle('device:check', refreshDevice);
+ipcMain.handle('device:display', async () => {
+  const current = await refreshDevice();
+  if (current.state !== 'connected') throw new Error(current.message || '设备未连接');
+  return readDisplayInfo(current.serial, current.root);
+});
 ipcMain.handle('adb:run', async (_event, id) => {
   const command = store.read().find((item) => item.id === id);
   if (!command) throw new Error('命令不存在');

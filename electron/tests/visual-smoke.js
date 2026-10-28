@@ -38,13 +38,40 @@ app.on('browser-window-created', (_event, win) => {
         }
       })()`);
       if (cardAction.disconnectedRuns !== 0 || cardAction.runs !== 3 || !cardAction.menuOpened || cardAction.runButtons !== 0) throw new Error(`Card click failed: ${JSON.stringify(cardAction)}`);
+      const display = await win.webContents.executeJavaScript(`(async () => {
+        const originalRefresh = refreshDisplayInfo;
+        const before = { device, displayInfo };
+        let reads = 0;
+        try {
+          refreshDisplayInfo = () => { reads++; };
+          updateDevice({ state: 'disconnected' });
+          updateDevice({ state: 'connected', serial: 'SCREEN_TEST', root: true });
+          updateDevice({ state: 'connected', serial: 'SCREEN_TEST', root: true });
+          displayInfo = { serial: 'SCREEN_TEST', readAt: Date.now(), resolution: { value: '1600 × 2400', source: 'wm size' },
+            panel: { value: 'lcd_jt122wqh009_mipi_wqxga2400', source: '/proc/cmdline · lcd_name' }, panelId: { value: 'ID122015', source: '/proc/cmdline · lcd_id' }, ddi: null };
+          renderDisplayInfo();
+          const result = { reads, values: ['display-resolution', 'display-panel', 'display-panel-id', 'display-ddi'].map(id => document.getElementById(id).textContent), source: document.getElementById('display-panel').title };
+          updateDevice({ state: 'disconnected' });
+          result.cleared = document.getElementById('display-panel').textContent === '—' && document.getElementById('refresh-display').disabled;
+          return result;
+        } finally {
+          refreshDisplayInfo = originalRefresh;
+          device = before.device;
+          displayInfo = before.displayInfo;
+          renderDevice();
+          if (device.state === 'connected') await refreshDisplayInfo();
+        }
+      })()`);
+      if (display.reads !== 1 || !display.cleared || display.source !== '/proc/cmdline · lcd_name' || JSON.stringify(display.values) !== JSON.stringify(['1600 × 2400', 'lcd_jt122wqh009_mipi_wqxga2400', 'ID122015', '未识别'])) throw new Error(`Display overview failed: ${JSON.stringify(display)}`);
       const identity = await win.webContents.executeJavaScript(`(() => {
         const ids = ['overview-device', 'device-subtitle'];
         const before = ids.map(id => document.getElementById(id).textContent);
         document.getElementById('overview-device').textContent = '已连接';
         document.getElementById('device-subtitle').textContent = '设备已连接';
+        document.querySelector('.command-section').scrollTop = 0;
         return before;
       })()`);
+      await win.webContents.executeJavaScript(`new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))`);
       const shot = await win.capturePage();
       fs.writeFileSync(path.join(__dirname, '..', 'preview.png'), shot.toPNG());
       await win.webContents.executeJavaScript(`(() => {
@@ -152,7 +179,7 @@ app.on('browser-window-created', (_event, win) => {
           captured[kind] = fs.statSync(paths[kind]).size;
         }
       }
-      console.log(JSON.stringify({ ...info, sidebar, compact, interactions, clock, logs, captured }));
+      console.log(JSON.stringify({ ...info, display, sidebar, compact, interactions, clock, logs, captured }));
       app.quit();
     } catch (error) {
       console.error(error);

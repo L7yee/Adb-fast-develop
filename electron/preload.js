@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('dashboard', {
   deleteCommand: (id) => ipcRenderer.invoke('commands:delete', id),
   reorderCommands: (ids) => ipcRenderer.invoke('commands:reorder', ids),
   checkDevice: () => ipcRenderer.invoke('device:check'),
+  readDisplayInfo: () => ipcRenderer.invoke('device:display'),
   runCommand: (id) => ipcRenderer.invoke('adb:run', id),
   getLogPaths: () => ipcRenderer.invoke('logs:paths'),
   setLogPath: (kind, filePath) => ipcRenderer.invoke('logs:path:set', kind, filePath),

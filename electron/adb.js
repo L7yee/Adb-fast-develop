@@ -152,4 +152,4 @@ class AdbRunner {
   }
 }
 
-module.exports = { AdbRunner, checkDevice, rootDevice, parseDevices, shellArgs };
+module.exports = { AdbRunner, checkDevice, rootDevice, parseDevices, shellArgs, collect };

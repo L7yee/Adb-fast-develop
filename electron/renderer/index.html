@@ -57,8 +57,17 @@
       <header class="topbar"><div class="breadcrumbs">工作区 <span>/</span> <strong id="breadcrumb-current">指令</strong></div><div id="command-actions" class="top-actions"><button id="manage-command" class="button secondary">管理指令</button><button id="add-command" class="button primary"><span>＋</span> 新建指令</button></div></header>
       <div class="workspace">
         <section class="command-section">
-          <div class="hero"><div><div class="eyebrow">ADB CONTROL CENTER</div><h1>指令</h1><p>连接设备，点击指令，查看这一次的执行结果。</p></div><div class="hero-graphic" aria-hidden="true"><span class="hero-ring ring-a"></span><span class="hero-ring ring-b"></span><span class="hero-core">⌘</span></div></div>
-          <div class="overview"><div class="overview-item"><span class="overview-icon blue">▣</span><div><small>设备状态</small><strong id="overview-device">检测中</strong></div></div><div class="overview-item"><span class="overview-icon green">◆</span><div><small>Root 权限</small><strong id="overview-root">检测中</strong></div></div><div class="overview-item"><span class="overview-icon purple">⌘</span><div><small>可用指令</small><strong id="overview-count">0 个</strong></div></div></div>
+          <section class="display-overview" aria-labelledby="display-heading">
+            <div class="display-heading"><div><div class="eyebrow">DISPLAY INFORMATION</div><h1 id="display-heading">屏幕信息</h1></div><button id="refresh-display" class="button secondary" disabled>读取信息</button></div>
+            <div class="display-fields" aria-live="polite">
+              <div class="display-field"><small>屏幕分辨率</small><strong id="display-resolution">—</strong><span id="display-resolution-detail" hidden></span></div>
+              <div class="display-field"><small>DDI</small><strong id="display-ddi">—</strong></div>
+              <div class="display-field"><small>LCD ID</small><strong id="display-panel-id">—</strong></div>
+              <div class="display-field panel-field"><small>Panel 名称</small><strong id="display-panel">—</strong></div>
+            </div>
+            <p id="display-status" class="display-status">连接设备后读取屏幕信息</p>
+            <div class="display-device"><span>设备 <strong id="overview-device">检测中</strong></span><span>Root <strong id="overview-root">—</strong></span></div>
+          </section>
           <div class="section-heading"><div><h2>指令库 <span id="visible-count" class="heading-count">0</span></h2><p>每次点击只执行一次</p></div><div class="section-tools"><button id="reorder" class="button subtle" title="拖动卡片调整顺序">调整顺序</button></div></div>
           <div id="command-grid" class="command-grid"></div>
           <div id="empty-state" class="empty-state" hidden><div>⌕</div><strong>没有找到指令</strong><p>换个关键词，或新建一条指令。</p></div>

@@ -11,6 +11,10 @@ let running = false;
 let output = '';
 let previous = new Map();
 let toastTimer;
+let displayInfo = null;
+let displayLoading = false;
+let displayError = '';
+let displayRequest = 0;
 
 function toast(message) {
   $('toast').textContent = message;
@@ -41,7 +45,56 @@ function renderDevice() {
   $('overview-root').textContent = connected ? (device.root ? '已获得' : '未获得') : '—';
   $('install-apk').disabled = !connected;
   document.querySelector('[data-rail-tool="install-apk"]').disabled = !connected;
+  renderDisplayInfo();
   renderCards();
+}
+
+function renderDisplayInfo() {
+  const connected = device.state === 'connected';
+  for (const [field, id] of Object.entries({ resolution: 'display-resolution', ddi: 'display-ddi', panel: 'display-panel', panelId: 'display-panel-id' })) {
+    const info = connected && displayInfo?.[field];
+    $(id).textContent = info?.value || (connected && displayInfo ? '未识别' : '—');
+    $(id).title = info?.source || (connected && displayInfo ? '设备未提供可识别的信息，或当前权限不足' : '');
+    $(id).classList.toggle('unidentified', !info);
+  }
+  const override = connected && displayInfo?.overrideResolution;
+  $('display-resolution-detail').hidden = !override;
+  $('display-resolution-detail').textContent = override ? `覆盖分辨率 ${override.value}` : '';
+  $('refresh-display').disabled = !connected || displayLoading;
+  $('refresh-display').textContent = displayLoading ? '读取中…' : '读取信息';
+  $('display-status').textContent = !connected ? '连接设备后读取屏幕信息' : displayLoading ? '正在读取屏幕信息…'
+    : displayError || (displayInfo ? `读取于 ${new Date(displayInfo.readAt).toLocaleTimeString('zh-CN')} · 悬停字段可查看来源` : '点击读取屏幕信息');
+}
+
+async function refreshDisplayInfo() {
+  if (device.state !== 'connected') return;
+  const serial = device.serial;
+  const request = ++displayRequest;
+  displayLoading = true;
+  displayError = '';
+  renderDisplayInfo();
+  try {
+    const result = await api.readDisplayInfo();
+    if (request !== displayRequest || device.state !== 'connected' || device.serial !== serial || result.serial !== serial) return;
+    displayInfo = result;
+  } catch (error) {
+    if (request === displayRequest) displayError = `读取失败：${error.message}`;
+  } finally {
+    if (request === displayRequest) { displayLoading = false; renderDisplayInfo(); }
+  }
+}
+
+function updateDevice(next) {
+  const newConnection = next.state === 'connected' && (device.state !== 'connected' || device.serial !== next.serial);
+  if (next.state !== 'connected' || device.serial !== next.serial) {
+    displayRequest++;
+    displayInfo = null;
+    displayLoading = false;
+    displayError = '';
+  }
+  device = next;
+  renderDevice();
+  if (newConnection) refreshDisplayInfo();
 }
 
 function renderCards() {
@@ -101,7 +154,6 @@ function renderCards() {
   }
   $('visible-count').textContent = visible.length;
   $('empty-state').hidden = visible.length !== 0;
-  $('overview-count').textContent = `${commands.length} 个`;
   $('count-all').textContent = commands.length;
 }
 
@@ -333,7 +385,8 @@ $('delete-command').addEventListener('click', async () => {
 });
 document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => $(button.dataset.close).close()));
 $('reorder').addEventListener('click', () => { reorder = !reorder; $('reorder').classList.toggle('active', reorder); $('reorder').textContent = reorder ? '完成排序' : '调整顺序'; renderCards(); });
-$('refresh-device').addEventListener('click', async () => { device = await api.checkDevice(); renderDevice(); toast(device.state === 'connected' ? '设备已连接' : device.message); });
+$('refresh-device').addEventListener('click', async () => { updateDevice(await api.checkDevice()); toast(device.state === 'connected' ? '设备已连接' : device.message); });
+$('refresh-display').addEventListener('click', refreshDisplayInfo);
 $('install-apk').addEventListener('click', async () => { try { await api.installApk(); } catch (error) { toast(error.message); } });
 document.querySelectorAll('.choose-log-path').forEach((button) => button.addEventListener('click', async () => {
   try {
@@ -375,7 +428,7 @@ document.addEventListener('keydown', (event) => {
   }
 });
 api.onAdbEvent(onAdbEvent);
-api.onDeviceChanged((next) => { device = next; renderDevice(); });
+api.onDeviceChanged(updateDevice);
 refreshCommands().catch((error) => toast(error.message));
 api.getLogPaths().then((paths) => { for (const kind of ['kernel', 'logcat']) $(`${kind}-path`).value = paths[kind]; }).catch((error) => toast(error.message));
-api.checkDevice().then((next) => { device = next; renderDevice(); });
+api.checkDevice().then(updateDevice);
