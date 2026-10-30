@@ -2,6 +2,8 @@
 
 一款基于 Electron 的开源 Android ADB 调试桌面工具。当前维护的应用位于 [`electron/`](electron/)，采用深色双栏侧边导航界面；旧版 Python/PyQt 源码完整归档于 [`legacy-python/`](legacy-python/)。
 
+新对话或新维护者接手时，先读 [AGENTS.md](AGENTS.md)、[项目接手说明](docs/PROJECT_STATE.md) 和 [版本/变更记录](CHANGELOG.md)。在根目录运行 `node electron/scripts/history.js`，可查看每个 commit 对应的应用版本和发布标签；此命令只读 Git 历史。
+
 ## 目录
 
 ```text
